@@ -1,0 +1,2 @@
+Bits and pieces of .NET runtime Platform Abstraction Layer, adapted to allow
+building as part of a CMake-based project.
