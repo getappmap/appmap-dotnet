@@ -1,37 +1,11 @@
 #include <unknwn.h>
-#include <atomic>
+#include "com_base.h"
 
-class Factory : IClassFactory
+class Factory : public com_base<IClassFactory>
 {
-    std::atomic<int> ref_count = 0;
-    
 public:
     virtual ~Factory() {}
     
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override
-    {
-        *ppvObject = nullptr;
-        
-        if (riid == IID_IUnknown || riid == IID_IClassFactory) {
-            *ppvObject = this;
-            AddRef();
-            return S_OK;
-        }
-        
-        return E_NOINTERFACE;
-    }
-
-    ULONG STDMETHODCALLTYPE AddRef() override {
-        return std::atomic_fetch_add(&ref_count, 1) + 1;
-    }
-
-    ULONG STDMETHODCALLTYPE Release() override {
-        auto count = std::atomic_fetch_sub(&ref_count, 1) - 1;
-        if (count <= 0)
-            delete this;
-        return count;
-    }
-
     HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown */*pUnkOuter*/, REFIID /*riid*/, void **ppvObject) override
     {
         *ppvObject = nullptr;
@@ -41,7 +15,7 @@ public:
     HRESULT STDMETHODCALLTYPE LockServer(BOOL /*fLock*/) override { return S_OK; } 
 };
 
-extern "C" HRESULT DllGetClassObject(GUID &/*rclsid*/, GUID &/*riid*/, void **/*ppvObj*/)
+extern "C" HRESULT DllGetClassObject([[maybe_unused]] GUID &rclsid, GUID &riid, void **ppvObj)
 {
-    return E_FAIL;
+    return (new Factory)->QueryInterface(riid, ppvObj);
 }

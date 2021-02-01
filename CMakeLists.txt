@@ -46,6 +46,7 @@ target_compile_options(appmap-instrumentation PUBLIC "$<$<BOOL:${MSVC}>:/permiss
 target_compile_options(appmap-instrumentation PRIVATE -W -Wall -Werror -pedantic)
 
 add_subdirectory(pal)
+add_subdirectory(com)
 target_link_libraries(appmap-instrumentation
-    PRIVATE pal
+    PRIVATE com
 )
