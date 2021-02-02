@@ -1,14 +1,13 @@
 #include <unknwn.h>
-#include "com_base.h"
+#include "com/base.h"
 
-class Factory : public com_base<IClassFactory>
+class Factory : public com::base<IClassFactory>
 {
 public:
     virtual ~Factory() {}
     
-    HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown */*pUnkOuter*/, REFIID /*riid*/, void **ppvObject) override
+    HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown */*pUnkOuter*/, [[maybe_unused]] REFIID riid, [[maybe_unused]] void **ppvObject) override
     {
-        *ppvObject = nullptr;
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 

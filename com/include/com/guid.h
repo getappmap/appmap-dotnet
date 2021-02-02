@@ -3,6 +3,8 @@
 #include <pal_mstypes.h>
 #include <ios>
 
+namespace com {
+
 template<class Interface>
 const GUID guid_of() noexcept;
 
@@ -19,4 +21,6 @@ OStream &operator<<(OStream &os, const GUID &guid) {
         (guid.Data4[4] << 8 | guid.Data4[5]) << 
         (guid.Data4[6] << 8 | guid.Data4[7])
     << "}";
+}
+
 }

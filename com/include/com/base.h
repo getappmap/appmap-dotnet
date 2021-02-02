@@ -3,6 +3,8 @@
 #include <atomic>
 #include "guid.h"
 
+namespace com {
+
 inline namespace detail {
     template <typename Interface, typename T>
     inline void *query(T *obj, const GUID &iid) {
@@ -21,13 +23,13 @@ inline namespace detail {
 }
 
 template <typename... Interfaces>
-class com_base : public Interfaces... {
+class base : public Interfaces... {
 public:
-    virtual ~com_base() {}
+    virtual ~base() {}
 
-    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) override
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) final
     {
-        *ppvObject = detail::query<com_base, IUnknown, Interfaces...>(this, riid);
+        *ppvObject = detail::query<base, IUnknown, Interfaces...>(this, riid);
 
         if (*ppvObject) {
             AddRef();
@@ -37,11 +39,11 @@ public:
         return E_NOINTERFACE;
     }
 
-    ULONG STDMETHODCALLTYPE AddRef() override {
+    ULONG STDMETHODCALLTYPE AddRef() final {
         return std::atomic_fetch_add(&ref_count, 1) + 1;
     }
 
-    ULONG STDMETHODCALLTYPE Release() override {
+    ULONG STDMETHODCALLTYPE Release() final {
         auto count = std::atomic_fetch_sub(&ref_count, 1) - 1;
         if (count <= 0)
             delete this;
@@ -51,3 +53,5 @@ public:
 private:
     std::atomic<int> ref_count = 0;
 };
+
+}
