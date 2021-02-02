@@ -23,6 +23,12 @@ endif()
 
 include(cmake/CPM.cmake)
 
+CPMAddPackage(
+    NAME utfcpp
+    GITHUB_REPOSITORY nemtrif/utfcpp
+    VERSION 3.1.2
+)
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -47,6 +53,7 @@ target_compile_options(appmap-instrumentation PRIVATE -W -Wall -Werror -pedantic
 
 add_subdirectory(pal)
 add_subdirectory(com)
+add_subdirectory(clrie)
 target_link_libraries(appmap-instrumentation
-    PRIVATE com
+    PRIVATE com clrie
 )
