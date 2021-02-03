@@ -69,12 +69,12 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
 
 void appmap::instrumentation_method::method_called(FunctionID fid)
 {
-    events.push_back({fid, event::kind::call, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
+    events.push_back({fid, event::kind::call, current_thread_id()});
 }
 
 void appmap::instrumentation_method::method_returned(FunctionID fid)
 {
-    events.push_back({fid, event::kind::return_, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
+    events.push_back({fid, event::kind::return_, current_thread_id()});
 }
 
 void appmap::instrumentation_method::on_shutdown()
@@ -86,7 +86,7 @@ void appmap::instrumentation_method::on_shutdown()
             return appmap::event::kind::return_;
     };
     
-    auto basic_call_info = [this](auto id) {
+    [[maybe_unused]] auto basic_call_info = [this](auto id) {
         static std::unordered_map<FunctionID, appmap::event::call_info> infos;
         auto it = infos.find(id);
         if (it != infos.end())
@@ -110,8 +110,7 @@ void appmap::instrumentation_method::on_shutdown()
         appmap::event ev{ i, to_appmap(event.kind), event.thread, {} };
         
         if (event.kind == event::kind::call) {
-            appmap::event::call_info info = basic_call_info(event.function);
-            ev.info = info;
+            ev.info = basic_call_info(event.function);
         } else {
             unsigned int call_idx = i;
             for (; call_idx > 0; call_idx--) {
@@ -145,5 +144,12 @@ void appmap::instrumentation_method::exception_unwind_function_enter(clrie::meth
     // If we're here an exception has been thrown and the stack is being unwound.
     // If it's a function we're instrumenting, record a return.
     if (methods.find(fid) != methods.end())
-        events.push_back({fid, event::kind::return_, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
+        events.push_back({fid, event::kind::return_, current_thread_id()});
+}
+
+ThreadID appmap::instrumentation_method::current_thread_id()
+{
+    ThreadID tid;
+    com::hresult::check(profiler->GetCurrentThreadID(&tid));
+    return tid;
 }

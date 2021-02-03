@@ -27,6 +27,8 @@ namespace appmap {
             ThreadID thread;
         };
         
+        ThreadID current_thread_id();
+        
         com::ptr<IProfilerManager> manager;
         com::ptr<ICorProfilerInfo> profiler;
         std::vector<event> events;
