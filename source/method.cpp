@@ -3,15 +3,21 @@
 #include "method.h"
 #include "clrie/instruction_graph.h"
 
-void appmap::instrumentation_method::initialize([[maybe_unused]] com::ptr<IProfilerManager> profiler_manager)
+void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> profiler_manager)
 {
-    std::cout << "initialize" << std::endl;
+    manager = profiler_manager;
+    auto profiler = manager.get(&IProfilerManager::GetCorProfilerInfo).as<ICorProfilerInfo>();
+    
+    DWORD eventMask;
+    com::hresult::check(profiler->GetEventMask(&eventMask));
+    eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
+    com::hresult::check(profiler->SetEventMask(eventMask));
 }
 
-bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method_info, bool is_rejit)
+bool appmap::instrumentation_method::should_instrument_method([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] bool is_rejit)
 {
-    std::cout << "should_instrument_method(" << method_info.full_name() << ", " << is_rejit << std::endl;
-    return true;
+    // don't instrument system methods, it's more trouble than it's worth
+    return method_info.full_name().rfind("System.", 0) != 0;
 }
 
 [[maybe_unused]] static void method_called(appmap::instrumentation_method *ptr, FunctionID fid)
@@ -30,8 +36,9 @@ constexpr GUID com::guid_of<IMetaDataEmit>() noexcept {
     return "{BA3FEE4C-ECB9-4e41-83B7-183FA41CD859}"_guid;
 }
 
-void appmap::instrumentation_method::instrument_method(clrie::method_info method_info, bool is_rejit)
+void appmap::instrumentation_method::instrument_method(clrie::method_info method_info, [[maybe_unused]] bool is_rejit)
 {
+    methods[method_info.function_id()] = method_info;
     auto graph = method_info.instructions();
     auto factory = method_info.instruction_factory();
 
@@ -47,23 +54,64 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
     graph.insert_before(first, factory.create_load_const_instruction(&::method_called));
     graph.insert_before(first, factory.create_token_operand_instruction(Cee_Calli, token));
     
-    // Note: we should perform the single return transformation before this, 
-    // but for some reason it leads to random segfaults. Let's revisit later.
+    auto instr = method_info.single_ret_default_instrumentation();
+    instr->Initialize(graph);
+    instr->ApplySingleRetDefaultInstrumentation();
+
     auto last = graph.last_instruction();
     graph.insert_before(last, factory.create_load_const_instruction(this));
     graph.insert_before(last, factory.create_load_const_instruction(method_info.function_id()));
     graph.insert_before(last, factory.create_load_const_instruction(&::method_returned));
     graph.insert_before(last, factory.create_token_operand_instruction(Cee_Calli, token));
-
-    std::cout << "instrument_method(" << method_info.full_name() << "(" << method_info.function_id() << "), " << is_rejit << std::endl;
 }
 
 void appmap::instrumentation_method::method_called(FunctionID fid)
 {
-    std::cout << "method_called(" << fid << std::endl;
+    events.push_back({fid, event::kind::call});
 }
 
 void appmap::instrumentation_method::method_returned(FunctionID fid)
 {
-    std::cout << "method_returned(" << fid << std::endl;
+    events.push_back({fid, event::kind::return_});
+}
+
+void appmap::instrumentation_method::on_shutdown()
+{
+    int level = 0;
+    for (const auto &ev: events) {
+        auto &info = methods[ev.function];
+
+        if (ev.kind == event::kind::return_)
+            level--;
+        std::cout << std::string(level, ' ');
+        if (ev.kind == event::kind::return_)
+            std::cout << "} // ";
+        std::cout << info.full_name();
+
+        if (ev.kind == event::kind::call) {
+            std::cout << " {";
+            level++;
+        }
+        std::cout << std::endl;
+    }
+}
+
+void appmap::instrumentation_method::exception_catcher_enter(clrie::method_info method_info, [[maybe_unused]] UINT_PTR object_id)
+{
+    if (methods.find(method_info.function_id()) != methods.end()) {
+        // An exception has been caught inside a function we're instrumenting.
+        // This means the return recorded in exception_unwind_function_enter() wasn't actually a return,
+        // as the stack unwinding stopped.
+        events.pop_back();
+    }
+}
+
+void appmap::instrumentation_method::exception_unwind_function_enter(clrie::method_info method_info)
+{
+    const FunctionID fid = method_info.function_id();
+
+    // If we're here an exception has been thrown and the stack is being unwound.
+    // If it's a function we're instrumenting, record a return.
+    if (methods.find(fid) != methods.end())
+        events.push_back({fid, event::kind::return_});
 }

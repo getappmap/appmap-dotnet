@@ -22,14 +22,18 @@ inline namespace detail {
     }
 }
 
-template <typename... Interfaces>
-class base : public Interfaces... {
+template <typename IFace, typename... Interfaces>
+class base : public IFace, public Interfaces... {
 public:
     virtual ~base() {}
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void **ppvObject) final
     {
-        *ppvObject = detail::query<base, IUnknown, Interfaces...>(this, riid);
+        if (riid == guid_of<IUnknown>()) {
+            *ppvObject = static_cast<IFace *>(this);
+        } else {
+            *ppvObject = detail::query<base, IFace, Interfaces...>(this, riid);
+        }
 
         if (*ppvObject) {
             AddRef();

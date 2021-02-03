@@ -9,7 +9,7 @@
 
 namespace clrie {
     struct method_info : public com::ptr<IMethodInfo> {
-        method_info(IMethodInfo *info) noexcept : com::ptr<IMethodInfo>(info) {}
+        method_info(IMethodInfo *info = nullptr) noexcept : com::ptr<IMethodInfo>(info) {}
 
         clrie::module_info module_info() {
             return get(&interface_type::GetModuleInfo);
