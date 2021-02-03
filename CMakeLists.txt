@@ -29,6 +29,18 @@ CPMAddPackage(
     VERSION 3.1.2
 )
 
+CPMAddPackage(
+  NAME nlohmann_json
+  VERSION 3.9.1
+  # not using the repo as it takes forever to clone
+  URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
+)
+
+if (nlohmann_json_ADDED)
+  add_library(nlohmann_json INTERFACE IMPORTED)
+  target_include_directories(nlohmann_json INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
+endif()
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -55,5 +67,5 @@ add_subdirectory(pal)
 add_subdirectory(com)
 add_subdirectory(clrie)
 target_link_libraries(appmap-instrumentation
-    PRIVATE com clrie
+    PRIVATE com clrie nlohmann_json
 )

@@ -1,12 +1,14 @@
 #include <iostream>
+#include <algorithm>
 
+#include "appmap.h"
 #include "method.h"
 #include "clrie/instruction_graph.h"
 
 void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> profiler_manager)
 {
     manager = profiler_manager;
-    auto profiler = manager.get(&IProfilerManager::GetCorProfilerInfo).as<ICorProfilerInfo>();
+    profiler = manager.get(&IProfilerManager::GetCorProfilerInfo).as<ICorProfilerInfo>();
     
     DWORD eventMask;
     com::hresult::check(profiler->GetEventMask(&eventMask));
@@ -67,33 +69,63 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
 
 void appmap::instrumentation_method::method_called(FunctionID fid)
 {
-    events.push_back({fid, event::kind::call});
+    events.push_back({fid, event::kind::call, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
 }
 
 void appmap::instrumentation_method::method_returned(FunctionID fid)
 {
-    events.push_back({fid, event::kind::return_});
+    events.push_back({fid, event::kind::return_, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
 }
 
 void appmap::instrumentation_method::on_shutdown()
 {
-    int level = 0;
-    for (const auto &ev: events) {
-        auto &info = methods[ev.function];
+    auto to_appmap = [](auto kind) { 
+        if (kind == appmap::instrumentation_method::event::kind::call)
+            return appmap::event::kind::call;
+        else
+            return appmap::event::kind::return_;
+    };
+    
+    auto basic_call_info = [this](auto id) {
+        static std::unordered_map<FunctionID, appmap::event::call_info> infos;
+        auto it = infos.find(id);
+        if (it != infos.end())
+            return it->second;
+        
+        auto &method = methods[id];
+        
+        appmap::event::call_info info;
+        info.defined_class = method.declaring_type().get(&IType::GetName);
+        info.method_id = method.name();
+        info.static_ = method.is_static();
+        
+        return infos[id] = info;
+    };
 
-        if (ev.kind == event::kind::return_)
-            level--;
-        std::cout << std::string(level, ' ');
-        if (ev.kind == event::kind::return_)
-            std::cout << "} // ";
-        std::cout << info.full_name();
+    map appmap;
 
-        if (ev.kind == event::kind::call) {
-            std::cout << " {";
-            level++;
+    for (unsigned int i = 0; i < events.size(); ++i) {
+        const event &event = events[i];
+        
+        appmap::event ev{ i, to_appmap(event.kind), event.thread, {} };
+        
+        if (event.kind == event::kind::call) {
+            appmap::event::call_info info = basic_call_info(event.function);
+            ev.info = info;
+        } else {
+            unsigned int call_idx = i;
+            for (; call_idx > 0; call_idx--) {
+                const auto &other = events[call_idx];
+                if (other.function == event.function && other.thread == event.thread && other.kind == event::kind::call)
+                    break;
+            }
+            ev.info = appmap::event::return_info { call_idx };
         }
-        std::cout << std::endl;
+        
+        appmap.events.push_back(ev);
     }
+    
+    std::cout << nlohmann::json(appmap).dump(4) << std::endl;
 }
 
 void appmap::instrumentation_method::exception_catcher_enter(clrie::method_info method_info, [[maybe_unused]] UINT_PTR object_id)
@@ -113,5 +145,5 @@ void appmap::instrumentation_method::exception_unwind_function_enter(clrie::meth
     // If we're here an exception has been thrown and the stack is being unwound.
     // If it's a function we're instrumenting, record a return.
     if (methods.find(fid) != methods.end())
-        events.push_back({fid, event::kind::return_});
+        events.push_back({fid, event::kind::return_, profiler.get(&ICorProfilerInfo::GetCurrentThreadID)});
 }

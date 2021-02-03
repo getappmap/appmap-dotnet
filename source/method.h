@@ -24,9 +24,11 @@ namespace appmap {
             FunctionID function;
             enum class kind { call, return_ };
             kind kind;
+            ThreadID thread;
         };
-
+        
         com::ptr<IProfilerManager> manager;
+        com::ptr<ICorProfilerInfo> profiler;
         std::vector<event> events;
         std::unordered_map<FunctionID, clrie::method_info> methods;
     };
