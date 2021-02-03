@@ -13,6 +13,7 @@ template <class Interface>
 struct ptr
 {
     ptr() noexcept {}
+    using interface_type = Interface;
     
     ptr(Interface* pointer) noexcept : ptr_(pointer) {
         if (ptr_ != nullptr)
@@ -52,7 +53,7 @@ struct ptr
     bstr get(HRESULT (Interface::*fun)(BSTR *))
     {
         bstr result;
-        check_hresult(std::invoke(fun, *ptr_, &result));
+        hresult::check(std::invoke(fun, *ptr_, &result));
         return result;
     }
     
@@ -60,7 +61,16 @@ struct ptr
     T get(HRESULT (Interface::*fun)(T *))
     {
         T result;
-        check_hresult(std::invoke(fun, *ptr_, &result));
+        hresult::check(std::invoke(fun, *ptr_, &result));
+        return result;
+    }
+    
+    // not sure how to make it deduce the result type so you'll have to declare it
+    template <typename Result, typename Fun, typename... Params>
+    Result get(Fun fun, Params... params)
+    {
+        Result result;
+        hresult::check(std::invoke(fun, *ptr_, params..., &result));
         return result;
     }
 
@@ -68,15 +78,15 @@ struct ptr
     ptr<Other> get(HRESULT (Interface::*fun)(Other **))
     {
         ptr<Other> result;
-        check_hresult(std::invoke(fun, *ptr_, &result));
+        hresult::check(std::invoke(fun, *ptr_, &result));
         return result;
     }
 
     template <class Other, class... Params>
-    ptr<Other> get(HRESULT (Interface::*fun)(Params..., Other **), Params&&...params)
+    ptr<Other> get(HRESULT (Interface::*fun)(Params..., Other **), Params&&...params...)
     {
         ptr<Other> result;
-        check_hresult(std::invoke(fun, *ptr_, std::forward<Params...>(params)..., &result));
+        hresult::check(std::invoke(fun, *ptr_, std::forward<Params...>(params)..., &result));
         return result;
     }
     
@@ -84,7 +94,7 @@ struct ptr
     ptr<Other> as()
     {
         ptr<Other> result;
-        check_hresult(ptr_->QueryInterface(guid_of<Other>(), reinterpret_cast<void**>(&result)));
+        hresult::check(ptr_->QueryInterface(guid_of<Other>(), reinterpret_cast<void**>(&result)));
         return result;
     }
     
@@ -92,7 +102,7 @@ struct ptr
         return const_cast<ptr &>(*this);
     }
 
-private:
+protected:
     Interface *ptr_ = nullptr;
 };
 

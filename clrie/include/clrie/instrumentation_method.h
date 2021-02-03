@@ -9,7 +9,10 @@
 #include "com/ptr.h"
 
 template<>
-const GUID com::guid_of<IInstrumentationMethod>() noexcept { return IID_IInstrumentationMethod; }
+constexpr GUID com::guid_of<IInstrumentationMethod>() noexcept {
+    using namespace com::literals;
+    return "{0D92A8D9-6645-4803-B94B-06A1C4F4E633}"_guid;
+}
 
 namespace clrie {
 
