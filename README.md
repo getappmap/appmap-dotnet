@@ -21,5 +21,5 @@ MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=opt/appmap-dotnet/Product
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.
 
-You can use the Dockerfile and run `docker build .` to build both the library and the CLR Instrumentation Engine.
-The binaries will end up in created images, you need to copy them out using your preferred method.
+You can use `scripts/docker-build.sh` to build both CLRIE and this instrumentation method in Docker.
+On success, `out` directory will contain all the files needed to use this instrumentation method.
