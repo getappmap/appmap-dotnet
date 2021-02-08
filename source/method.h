@@ -2,6 +2,7 @@
 #include "clrie/instrumentation_method.h"
 #include "clrie/method_info.h"
 #include <unordered_map>
+#include "events.h"
 
 namespace appmap {
     class instrumentation_method : public clrie::instrumentation_method<instrumentation_method>
@@ -19,13 +20,6 @@ namespace appmap {
         void method_returned(FunctionID fid);
 
     private:
-        struct event {
-            FunctionID function;
-            enum class kind { call, return_ };
-            kind kind;
-            ThreadID thread;
-        };
-        
         ThreadID current_thread_id();
         
         com::ptr<IProfilerManager> manager;

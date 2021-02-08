@@ -1,7 +1,8 @@
-#include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <nlohmann/json.hpp>
 
-#include "appmap.h"
 #include "method.h"
 #include "clrie/instruction_graph.h"
 
@@ -19,7 +20,7 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> profi
 bool appmap::instrumentation_method::should_instrument_method([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] bool is_rejit)
 {
     // don't instrument system methods, it's more trouble than it's worth
-    return method_info.full_name().rfind("System.", 0) != 0;
+    return method_info.full_name().rfind("System.", 0) != 0 && method_info.full_name().rfind("Microsoft.", 0) != 0;
 }
 
 [[maybe_unused]] static void method_called(appmap::instrumentation_method *ptr, FunctionID fid)
@@ -81,52 +82,18 @@ void appmap::instrumentation_method::method_returned(FunctionID fid)
 
 void appmap::instrumentation_method::on_shutdown()
 {
-    auto to_appmap = [](auto kind) { 
-        if (kind == appmap::instrumentation_method::event::kind::call)
-            return appmap::event::kind::call;
-        else
-            return appmap::event::kind::return_;
-    };
-    
-    [[maybe_unused]] auto basic_call_info = [this](auto id) {
-        static std::unordered_map<FunctionID, appmap::event::call_info> infos;
-        auto it = infos.find(id);
-        if (it != infos.end())
-            return it->second;
-        
-        auto &method = methods[id];
-        
-        appmap::event::call_info info;
-        info.defined_class = method.declaring_type().get(&IType::GetName);
-        info.method_id = method.name();
-        info.static_ = method.is_static();
-        
-        return infos[id] = info;
+    auto print = [this](auto &&out) {
+        nlohmann::json j;
+        j["events"] = to_json(events, methods);
+        out << j.dump(2) << std::endl;
     };
 
-    map appmap;
-
-    for (unsigned int i = 0; i < events.size(); ++i) {
-        const event &event = events[i];
-        
-        appmap::event ev{ i, to_appmap(event.kind), event.thread, {} };
-        
-        if (event.kind == event::kind::call) {
-            ev.info = basic_call_info(event.function);
-        } else {
-            unsigned int call_idx = i;
-            for (; call_idx > 0; call_idx--) {
-                const auto &other = events[call_idx];
-                if (other.function == event.function && other.thread == event.thread && other.kind == event::kind::call)
-                    break;
-            }
-            ev.info = appmap::event::return_info { call_idx };
-        }
-        
-        appmap.events.push_back(ev);
+    const auto path = std::getenv("APPMAP_OUTPUT_PATH");
+    if (path == nullptr)
+        print(std::cout);
+    else {
+        print(std::ofstream(path));
     }
-    
-    std::cout << nlohmann::json(appmap).dump(4) << std::endl;
 }
 
 void appmap::instrumentation_method::exception_catcher_enter(clrie::method_info method_info, [[maybe_unused]] UINT_PTR object_id)
