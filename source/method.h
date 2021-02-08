@@ -10,7 +10,6 @@ namespace appmap {
         void initialize([[maybe_unused]] com::ptr<IProfilerManager> profiler_manager);
         bool should_instrument_method([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] bool is_rejit);
         void instrument_method([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] bool is_rejit);
-        bool allow_inline_site([[maybe_unused]] com::ptr<IMethodInfo> method_info_inlinee, [[maybe_unused]] com::ptr<IMethodInfo> method_info_caller) { return false; }
         void on_shutdown();
         
         void exception_catcher_enter([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] UINT_PTR object_id);
