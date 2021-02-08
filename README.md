@@ -17,6 +17,10 @@ MicrosoftInstrumentationEngine_FileLogPath=/dev/stderr
 MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=opt/appmap-dotnet/ProductionBreakpoints_x64.config
 ```
 
+For convenience [run](scripts/run.sh) script is provided that sets it all up for the `out` subdirectory, as built
+by `docker-build.sh`. If you're building locally, you can `ln -sf build/libappmap-instrumentation.so out`
+so that the current binary is used.
+
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.
