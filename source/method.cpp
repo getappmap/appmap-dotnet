@@ -55,10 +55,12 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
     graph.insert_before(first, factory.create_load_const_instruction(method_info.function_id()));
     graph.insert_before(first, factory.create_load_const_instruction(&::method_called));
     graph.insert_before(first, factory.create_token_operand_instruction(Cee_Calli, token));
-    
-    auto instr = method_info.single_ret_default_instrumentation();
-    instr->Initialize(graph);
-    instr->ApplySingleRetDefaultInstrumentation();
+
+    if (0) { // TODO this sometimes causes code corruption
+        auto instr = method_info.single_ret_default_instrumentation();
+        instr->Initialize(graph);
+        instr->ApplySingleRetDefaultInstrumentation();
+    }
 
     auto last = graph.last_instruction();
     graph.insert_before(last, factory.create_load_const_instruction(this));
