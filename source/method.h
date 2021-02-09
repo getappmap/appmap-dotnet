@@ -2,6 +2,8 @@
 #include "clrie/instrumentation_method.h"
 #include "clrie/method_info.h"
 #include <unordered_map>
+
+#include "config.h"
 #include "events.h"
 
 namespace appmap {
@@ -26,5 +28,6 @@ namespace appmap {
         com::ptr<ICorProfilerInfo> profiler;
         std::vector<event> events;
         std::unordered_map<FunctionID, clrie::method_info> methods;
+        const configuration config;
     };
 }

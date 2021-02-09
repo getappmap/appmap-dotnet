@@ -19,8 +19,9 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> profi
 
 bool appmap::instrumentation_method::should_instrument_method([[maybe_unused]] clrie::method_info method_info, [[maybe_unused]] bool is_rejit)
 {
+    methods[method_info.function_id()] = method_info;
     // don't instrument system methods, it's more trouble than it's worth
-    return method_info.full_name().rfind("System.", 0) != 0 && method_info.full_name().rfind("Microsoft.", 0) != 0;
+    return config.instrument && method_info.full_name().rfind("System.", 0) != 0 && method_info.full_name().rfind("Microsoft.", 0) != 0;
 }
 
 [[maybe_unused]] static void method_called(appmap::instrumentation_method *ptr, FunctionID fid)
@@ -83,16 +84,22 @@ void appmap::instrumentation_method::method_returned(FunctionID fid)
 void appmap::instrumentation_method::on_shutdown()
 {
     auto print = [this](auto &&out) {
-        nlohmann::json j;
-        j["events"] = to_json(events, methods);
-        out << j.dump(2) << std::endl;
+        if (config.instrument) {
+            nlohmann::json j;
+            j["events"] = to_json(events, methods);
+            out << j.dump(2) << std::endl;
+        }
+        if (config.method_list) {
+            for (const auto &[_, info] : methods) {
+                out << "[" << info.module_info().module_name() << "]" << info.full_name() << std::endl;
+            }
+        }
     };
 
-    const auto path = std::getenv("APPMAP_OUTPUT_PATH");
-    if (path == nullptr)
-        print(std::cout);
+    if (config.output)
+        print(std::ofstream(*config.output, std::ios_base::out | std::ios_base::app));
     else {
-        print(std::ofstream(path));
+        print(std::cout);
     }
 }
 

@@ -21,6 +21,23 @@ For convenience [run](scripts/run.sh) script is provided that sets it all up for
 by `docker-build.sh`. If you're building locally, you can `ln -sf build/libappmap-instrumentation.so out`
 so that the current binary is used.
 
+## Configuration
+
+### Environment variables
+
+#### `APPMAP`
+
+If set, methods are instrumented and an appmap is produced.
+
+#### `APPMAP_METHOD_LIST`
+
+If set, the list of all methods ever seen is printed on shutdown. Note it usually doesn't make sense to use it together with `APPMAP`.
+
+#### `APPMAP_OUTPUT_PATH`
+
+Path to the output file. **Note it will be appended to**, which is especially useful with `APPMAP_METHOD_LIST` and if several processes are run (like usually happens when running `dotnet test`, for example).
+If not set, the output is printed to the standard output stream.
+
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.
