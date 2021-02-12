@@ -90,7 +90,8 @@ void appmap::instrumentation_method::on_shutdown()
             out << j.dump(2) << std::endl;
         }
         if (config.method_list) {
-            for (const auto &[_, info] : methods) {
+            for (const auto &method : methods) {
+                const auto &info = method.second;
                 out << "[" << info.module_info().module_name() << "]" << info.full_name() << std::endl;
             }
         }
