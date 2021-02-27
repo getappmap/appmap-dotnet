@@ -7,3 +7,4 @@ appmap::configuration::configuration() noexcept
     if (const char *path = std::getenv("APPMAP_OUTPUT_PATH"))
         output = path;
 }
+

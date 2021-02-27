@@ -1,15 +1,10 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
-# ---- Project ----
-
-# Note: update this to your new project's name and version
 project(
   appmap-dotnet
   VERSION 0.0.1
   LANGUAGES CXX
 )
-
-# ---- Include guards ----
 
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
@@ -17,9 +12,6 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
       "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
   )
 endif()
-
-# ---- Add dependencies via CPM ----
-# see https://github.com/TheLartians/CPM.cmake for more info
 
 include(cmake/CPM.cmake)
 
@@ -41,6 +33,12 @@ if (nlohmann_json_ADDED)
   target_include_directories(nlohmann_json INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
 endif()
 
+CPMAddPackage(
+  NAME doctest
+  GITHUB_REPOSITORY onqtam/doctest
+  GIT_TAG 2.4.5
+)
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -61,11 +59,11 @@ set_target_properties(appmap-instrumentation PROPERTIES CXX_STANDARD 20)
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(appmap-instrumentation PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
 
-target_compile_options(appmap-instrumentation PRIVATE -W -Wall -Werror -pedantic)
-
 add_subdirectory(pal)
 add_subdirectory(com)
 add_subdirectory(clrie)
+add_subdirectory(test)
+
 target_link_libraries(appmap-instrumentation
-    PRIVATE com clrie nlohmann_json
+    PRIVATE com clrie nlohmann_json doctest
 )

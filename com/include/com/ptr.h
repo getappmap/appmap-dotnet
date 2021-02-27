@@ -83,7 +83,7 @@ struct ptr
     }
 
     template <class Other, class... Params>
-    ptr<Other> get(HRESULT (Interface::*fun)(Params..., Other **), Params&&...params...)
+    ptr<Other> get(HRESULT (Interface::*fun)(Params..., Other **), Params&&...params)
     {
         ptr<Other> result;
         hresult::check(std::invoke(fun, *ptr_, std::forward<Params...>(params)..., &result));
