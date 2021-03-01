@@ -106,7 +106,7 @@ nlohmann::json appmap::instrumentation_method::appmap() const
 {
     nlohmann::json j;
     j["events"] = to_json(events, methods);
-    j["metadata"] = config.metadata();
+    j["metadata"] = config.metadata;
     return j;
 }
 

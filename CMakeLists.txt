@@ -39,6 +39,15 @@ CPMAddPackage(
   GIT_TAG 2.4.5
 )
 
+CPMAddPackage(
+  NAME yaml-cpp
+  GITHUB_REPOSITORY jbeder/yaml-cpp
+  GIT_TAG yaml-cpp-0.6.3
+  OPTIONS "YAML_CPP_BUILD_TESTS OFF;YAML_CPP_BUILD_TOOLS OFF;YAML_CPP_BUILD_CONTRIB OFF"
+)
+
+target_compile_options(yaml-cpp PRIVATE -fPIC)
+
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -66,6 +75,6 @@ add_subdirectory(clrie)
 add_subdirectory(test)
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com doctest
+    PRIVATE com doctest stdc++fs yaml-cpp
     PUBLIC clrie nlohmann_json
 )
