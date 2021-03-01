@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <pal_mstypes.h>
+#include <unknwn.h>
+
 #include <ios>
 
 namespace com {
@@ -66,10 +69,12 @@ constexpr GUID guid_of<IUnknown>() noexcept {
 
 template <typename OStream>
 OStream &operator<<(OStream &os, const GUID &guid) {
-    return os << "{" << std::hex << guid.Data1 << "-" << guid.Data2 << "-" << guid.Data3 << "-" << 
-        (guid.Data4[0] << 8 | guid.Data4[1]) << "-" << 
-        (guid.Data4[2] << 8 | guid.Data4[3]) << 
-        (guid.Data4[4] << 8 | guid.Data4[5]) << 
+    os << "{" << std::hex << guid.Data1 << "-" << guid.Data2 << "-" << guid.Data3 << "-" <<
+        (guid.Data4[0] << 8 | guid.Data4[1]) << "-" <<
+        (guid.Data4[2] << 8 | guid.Data4[3]) <<
+        (guid.Data4[4] << 8 | guid.Data4[5]) <<
         (guid.Data4[6] << 8 | guid.Data4[7])
     << "}";
+
+    return os;
 }

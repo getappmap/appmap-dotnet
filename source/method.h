@@ -21,6 +21,8 @@ namespace appmap {
         void method_called(FunctionID fid);
         void method_returned(FunctionID fid);
 
+        nlohmann::json appmap() const;
+
     private:
         ThreadID current_thread_id();
         

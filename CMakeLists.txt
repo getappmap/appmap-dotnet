@@ -53,6 +53,7 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/
 # INTERFACE_COMPILE_FEATURES cxx_std_17)
 
 add_library(appmap-instrumentation SHARED ${headers} ${sources})
+target_include_directories(appmap-instrumentation INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 set_target_properties(appmap-instrumentation PROPERTIES CXX_STANDARD 20)
 
@@ -65,5 +66,6 @@ add_subdirectory(clrie)
 add_subdirectory(test)
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com clrie nlohmann_json doctest
+    PRIVATE com doctest
+    PUBLIC clrie nlohmann_json
 )

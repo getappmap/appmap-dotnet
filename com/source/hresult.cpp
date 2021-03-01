@@ -1,5 +1,6 @@
 #include "com/hresult.h"
 #include <iostream>
+#include <winerror.h>
 
 using namespace com;
 
@@ -9,8 +10,13 @@ const std::error_category &hresult::category() noexcept
         const char *name() const noexcept override {
             return "hresult";
         }
-        std::string message(int /* condition */) const noexcept override {
-            return "";
+        std::string message(int condition) const noexcept override {
+            switch (condition) {
+                case E_NOTIMPL:
+                    return "E_NOTIMPL not implemented";
+                default:
+                    return std::string("HRESULT ") + std::to_string(condition);
+            }
         }
     } category;
     return category;

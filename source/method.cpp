@@ -85,9 +85,7 @@ void appmap::instrumentation_method::on_shutdown()
 {
     auto print = [this](auto &&out) {
         if (config.instrument) {
-            nlohmann::json j;
-            j["events"] = to_json(events, methods);
-            out << j.dump(2) << std::endl;
+            out << appmap().dump(2) << std::endl;
         }
         if (config.method_list) {
             for (const auto &method : methods) {
@@ -102,6 +100,14 @@ void appmap::instrumentation_method::on_shutdown()
     else {
         print(std::cout);
     }
+}
+
+nlohmann::json appmap::instrumentation_method::appmap() const
+{
+    nlohmann::json j;
+    j["events"] = to_json(events, methods);
+    j["metadata"] = config.metadata();
+    return j;
 }
 
 void appmap::instrumentation_method::exception_catcher_enter(clrie::method_info method_info, [[maybe_unused]] UINT_PTR object_id)

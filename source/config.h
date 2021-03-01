@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <nlohmann/json_fwd.hpp>
 
 namespace appmap {
     struct configuration {
@@ -14,5 +15,7 @@ namespace appmap {
         bool method_list;
 
         std::optional<std::string> output;
+
+        nlohmann::json metadata() const;
     };
 }

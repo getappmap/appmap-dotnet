@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <nlohmann/json.hpp>
+
 appmap::configuration::configuration() noexcept
 {
     instrument = std::getenv("APPMAP");
@@ -8,3 +10,8 @@ appmap::configuration::configuration() noexcept
         output = path;
 }
 
+nlohmann::json appmap::configuration::metadata() const
+{
+    nlohmann::json j;
+    return j;
+}
