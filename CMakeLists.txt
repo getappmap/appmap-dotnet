@@ -6,6 +6,8 @@ project(
   LANGUAGES CXX
 )
 
+include(CTest)
+
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   message(
     FATAL_ERROR
@@ -72,9 +74,8 @@ target_compile_options(appmap-instrumentation PUBLIC "$<$<BOOL:${MSVC}>:/permiss
 add_subdirectory(pal)
 add_subdirectory(com)
 add_subdirectory(clrie)
-add_subdirectory(test)
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com doctest stdc++fs yaml-cpp
-    PUBLIC clrie nlohmann_json
+    PRIVATE com
+    PUBLIC clrie
 )

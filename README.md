@@ -25,18 +25,10 @@ so that the current binary is used.
 
 ### Environment variables
 
-#### `APPMAP`
+#### `APPMAP_LIST_MODULES`
 
-If set, methods are instrumented and an appmap is produced.
-
-#### `APPMAP_METHOD_LIST`
-
-If set, the list of all methods ever seen is printed on shutdown. Note it usually doesn't make sense to use it together with `APPMAP`.
-
-#### `APPMAP_OUTPUT_PATH`
-
-Path to the output file. **Note it will be appended to**, which is especially useful with `APPMAP_METHOD_LIST` and if several processes are run (like usually happens when running `dotnet test`, for example).
-If not set, the output is printed to the standard output stream.
+File path. If set, the list of all module names seen is printed there on shutdown.
+On Linux, you can use `/dev/stdout` or `/dev/stderr` to dump it to console.
 
 ## Building
 

@@ -1,6 +1,7 @@
+#include "method.h"
+
 #include <unknwn.h>
 #include "com/base.h"
-#include "method.h"
 
 class Factory : public com::base<IClassFactory>
 {

@@ -2,12 +2,6 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(appmap-test LANGUAGES CXX)
 
-if (CMAKE_BUILD_TYPE MATCHES Deb)
-  option(ENABLE_TESTING "Enable testing" ON)
-else()
-  option(ENABLE_TESTING "Enable testing" OFF)
-endif()
-
 option(ENABLE_TEST_COVERAGE "Enable test coverage" OFF)
 
 if (ENABLE_TESTING)

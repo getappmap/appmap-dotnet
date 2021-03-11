@@ -7,7 +7,7 @@
 namespace clrie {
     struct module_info : public com::ptr<IModuleInfo>
     {
-        module_info(com::ptr<IModuleInfo> &&info) noexcept : ptr(std::move(info)) {}
+        using ptr::ptr;
 
         std::string module_name() {
             return get(&interface_type::GetModuleName);
