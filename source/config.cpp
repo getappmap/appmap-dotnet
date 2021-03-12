@@ -1,3 +1,5 @@
+#include <spdlog/spdlog.h>
+
 #include "config.h"
 
 namespace {
@@ -13,4 +15,6 @@ namespace {
 
 appmap::config::config()
 : module_list_path{get_envar("APPMAP_LIST_MODULES")}
-{}
+{
+    spdlog::set_level(spdlog::level::debug);
+}

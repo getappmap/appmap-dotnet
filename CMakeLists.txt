@@ -30,6 +30,13 @@ CPMAddPackage(
   URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
 )
 
+CPMAddPackage(
+  NAME spdlog
+  VERSION 1.8.2
+  GITHUB_REPOSITORY gabime/spdlog
+)
+target_compile_options(spdlog PRIVATE -fPIC)
+
 if (nlohmann_json_ADDED)
   add_library(nlohmann_json INTERFACE IMPORTED)
   target_include_directories(nlohmann_json INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
@@ -46,6 +53,12 @@ CPMAddPackage(
   GITHUB_REPOSITORY jbeder/yaml-cpp
   GIT_TAG yaml-cpp-0.6.3
   OPTIONS "YAML_CPP_BUILD_TESTS OFF;YAML_CPP_BUILD_TOOLS OFF;YAML_CPP_BUILD_CONTRIB OFF"
+)
+
+CPMAddPackage(
+  NAME gsl-lite
+  GITHUB_REPOSITORY gsl-lite/gsl-lite
+  VERSION 0.37.0
 )
 
 target_compile_options(yaml-cpp PRIVATE -fPIC)
@@ -76,6 +89,6 @@ add_subdirectory(com)
 add_subdirectory(clrie)
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com
+    PRIVATE com spdlog gsl-lite
     PUBLIC clrie
 )

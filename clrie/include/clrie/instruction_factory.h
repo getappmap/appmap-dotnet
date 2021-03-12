@@ -1,8 +1,9 @@
 #pragma once
 
+#include <cor.h>
+#include <no_sal.h>
 #include <InstrumentationEngine.h>
 #include "com/ptr.h"
-#include <cor.h>
 
 namespace clrie {
     struct instruction_factory

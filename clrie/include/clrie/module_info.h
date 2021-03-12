@@ -8,6 +8,7 @@ namespace clrie {
     struct module_info : public com::ptr<IModuleInfo>
     {
         using ptr::ptr;
+        module_info(ptr &&info) : ptr(std::move(info)) {}
 
         std::string module_name() {
             return get(&interface_type::GetModuleName);
