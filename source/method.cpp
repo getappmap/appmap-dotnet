@@ -38,11 +38,6 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
     return true;
 }
 
-void method_called_fn()
-{
-    spdlog::debug("method_called_fn");
-}
-
 void appmap::instrumentation_method::instrument_method(clrie::method_info method, bool is_rejit)
 {
     spdlog::debug("instrument_method({}, {})", method.full_name(), is_rejit);
@@ -50,12 +45,15 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
     clrie::instruction_graph code = method.instructions();
     const instrumentation instr{method.instruction_factory(), method.module_info().meta_data_emit().as<IMetaDataEmit>()};
 
-    const auto call = instr.make_call(method_called_fn);
+    const auto call = instr.make_call(&instrumentation_method::method_called);
     const auto first = code.first_instruction();
+    spdlog::debug("pmf (size {}): {}", sizeof(&instrumentation_method::method_called), &instrumentation_method::method_called);
+    code.insert_before(first, method.instruction_factory().create_long_operand_instruction(Cee_Ldc_I8, reinterpret_cast<int64_t>(this)));
     for (auto i : call)
         code.insert_before(first, i);
 }
 
 void appmap::instrumentation_method::method_called()
 {
+    spdlog::debug("method_called, {}", *modules.begin());
 }

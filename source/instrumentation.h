@@ -8,12 +8,17 @@
 
 namespace {
     template <typename T>
-    constexpr COR_SIGNATURE type_signature() noexcept;
+    constexpr COR_SIGNATURE type_signature;
 
     template <>
-    constexpr COR_SIGNATURE type_signature<void>() noexcept {
-        return ELEMENT_TYPE_VOID;
-    }
+    constexpr COR_SIGNATURE type_signature<void> = ELEMENT_TYPE_VOID;
+
+    static_assert(sizeof(int) == 4);
+    template <>
+    constexpr COR_SIGNATURE type_signature<int> = ELEMENT_TYPE_I4;
+
+    template <typename T>
+    constexpr COR_SIGNATURE type_signature<T *> = ELEMENT_TYPE_I8;
 
     template <typename F>
     struct func_traits;
@@ -25,8 +30,22 @@ namespace {
         static constexpr std::array<COR_SIGNATURE, 3 + arity> signature = {
             IMAGE_CEE_UNMANAGED_CALLCONV_STDCALL,
             arity,
-            type_signature<Ret>(),
-            type_signature<Args>()...
+            type_signature<Ret>,
+            type_signature<Args>...
+        };
+    };
+
+    template <typename C, typename Ret, typename... Args>
+    struct func_traits<Ret(C::*)(Args...)>
+    {
+        using instance_type = C;
+        static constexpr std::size_t arity = sizeof...(Args);
+        static constexpr std::array<COR_SIGNATURE, 4 + arity> signature = {
+            IMAGE_CEE_UNMANAGED_CALLCONV_STDCALL,
+            arity + 1,
+            type_signature<Ret>,
+            type_signature<C*>,
+            type_signature<Args>...
         };
     };
 }
@@ -41,10 +60,10 @@ namespace appmap {
 
         template <class F>
         instruction_sequence make_call(F f) const {
-            return make_call(reinterpret_cast<void *>(f), gsl::make_span(func_traits<F>::signature));
+            return make_call_sig(reinterpret_cast<void *>(f), gsl::make_span(func_traits<F>::signature));
         }
 
     protected:
-        instruction_sequence make_call(void *fn, gsl::span<const COR_SIGNATURE> signature) const;
+        instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;
     };
 }
