@@ -36,16 +36,22 @@ void appmap::instrumentation_method::on_shutdown()
 
 bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method, bool is_rejit)
 {
-    spdlog::debug("should_instrument_method({}, {})", method.full_name(), is_rejit);
-    if (is_rejit) return false;
+    bool result = [&](){
+        if (is_rejit) return false;
 
-    const std::string module = method.module_info().module_name();
+        const auto name = method.full_name();
+        for (const auto &pkg : config.packages) {
+            if (name.rfind(pkg, 0) == 0) {
+                return true;
+            }
+        }
 
-    if (module.rfind("System.", 0) == 0 || module.rfind("Microsoft.", 0) == 0)
         return false;
+    }();
 
-    spdlog::debug("\t-> true");
-    return true;
+    spdlog::debug("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
+
+    return result;
 }
 
 void appmap::instrumentation_method::instrument_method(clrie::method_info method, bool is_rejit)

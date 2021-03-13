@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <cor.h>
 #include <corprof.h>
 #include <clrie/method_info.h>
@@ -16,5 +18,7 @@ namespace appmap {
     protected:
         void method_called(FunctionID id);
         void method_returned(FunctionID id);
+
+        std::unordered_map<FunctionID, std::string> method_names;
     };
 }
