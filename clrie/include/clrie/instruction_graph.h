@@ -46,6 +46,13 @@ namespace clrie {
             com::hresult::check(ptr_->InsertBefore(instruction_orig, instruction_new));
         }
 
+        template <typename Container>
+        void insert_before(com::ptr<IInstruction> pos, const Container &&instructions)
+        {
+            for (auto ins : instructions)
+                insert_before(pos, ins);
+        }
+
         // Insert an instruction after another instruction. jmp offsets that point to the next instruction after
         // the other instruction are not updated to reflect this change
         void insert_after(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new);

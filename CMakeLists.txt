@@ -90,6 +90,6 @@ add_subdirectory(com)
 add_subdirectory(clrie)
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com spdlog gsl-lite
+    PRIVATE com spdlog gsl-lite nlohmann_json
     PUBLIC clrie
 )

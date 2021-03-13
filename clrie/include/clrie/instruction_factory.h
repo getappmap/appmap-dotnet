@@ -10,6 +10,9 @@ namespace clrie {
     {
         instruction_factory(com::ptr<IInstructionFactory> &&factory) noexcept : ptr(std::move(factory)) {}
 
+        using instruction = com::ptr<IInstruction>;
+        using instruction_sequence = std::vector<instruction>;
+
         // Create an instance of an instruction that takes no operands
         com::ptr<IInstruction> create_instruction(enum ILOrdinalOpcode opcode) {
             com::ptr<IInstruction> result;
@@ -44,6 +47,24 @@ namespace clrie {
             com::ptr<IInstruction> result;
             com::hresult::check(ptr->CreateLongOperandInstruction(opcode, operand, &result));
             return result;
+        }
+
+        template <typename T>
+        instruction load_constant(T value) {
+            IInstruction *result;
+            if constexpr (sizeof(T) == sizeof(uint64_t)) {
+                com::hresult::check(ptr->CreateLongOperandInstruction(Cee_Ldc_I8, reinterpret_cast<uint64_t>(value), &result));
+            } else if constexpr (sizeof(T) == sizeof(uint32_t)) {
+                com::hresult::check(ptr->CreateIntOperandInstruction(Cee_Ldc_I4, reinterpret_cast<uint32_t>(value), &result));
+            } else {
+                static_assert(sizeof(T) < 0, "loading constant of T not implemented");
+            }
+            return result;
+        }
+
+        template <typename... Args>
+        instruction_sequence load_constants(Args... args) {
+            return { load_constant(args)... };
         }
 
         // Create an instance of an instruction that takes a float operand
@@ -88,13 +109,6 @@ namespace clrie {
         com::ptr<IInstruction> create_load_const_instruction(int value) {
             IInstruction *result;
             com::hresult::check(ptr->CreateLoadConstInstruction(value, &result));
-            return result;
-        }
-
-        template <typename T, typename = std::enable_if_t<sizeof(T) == sizeof(uint64_t)>>
-        com::ptr<IInstruction> create_load_const_instruction(T value) {
-            IInstruction *result;
-            com::hresult::check(ptr->CreateLongOperandInstruction(Cee_Ldc_I8, reinterpret_cast<uint64_t>(value), &result));
             return result;
         }
 

@@ -1,11 +1,17 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
+#include "generation.h"
 #include "method.h"
 #include "instrumentation.h"
 #include <fstream>
 
 using namespace appmap;
+
+void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manager)
+{
+    profiler_manager = manager;
+}
 
 void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
 {
@@ -21,6 +27,10 @@ void appmap::instrumentation_method::on_shutdown()
         for (const auto &mod : modules) {
             f << mod << '\n';
         }
+    }
+    if (config.appmap_output_path) {
+        const auto domains = profiler_manager.get(&IProfilerManager::GetAppDomainCollection);
+        std::ofstream(*config.appmap_output_path) << appmap::generate(recorder.events, domains);
     }
 }
 
@@ -42,18 +52,5 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
 {
     spdlog::debug("instrument_method({}, {})", method.full_name(), is_rejit);
 
-    clrie::instruction_graph code = method.instructions();
-    const instrumentation instr{method.instruction_factory(), method.module_info().meta_data_emit().as<IMetaDataEmit>()};
-
-    const auto call = instr.make_call(&instrumentation_method::method_called);
-    const auto first = code.first_instruction();
-    spdlog::debug("pmf (size {}): {}", sizeof(&instrumentation_method::method_called), &instrumentation_method::method_called);
-    code.insert_before(first, method.instruction_factory().create_long_operand_instruction(Cee_Ldc_I8, reinterpret_cast<int64_t>(this)));
-    for (auto i : call)
-        code.insert_before(first, i);
-}
-
-void appmap::instrumentation_method::method_called()
-{
-    spdlog::debug("method_called, {}", *modules.begin());
+    recorder.instrument(method);
 }

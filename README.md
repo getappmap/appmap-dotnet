@@ -30,6 +30,10 @@ so that the current binary is used.
 File path. If set, the list of all module names seen is printed there on shutdown.
 On Linux, you can use `/dev/stdout` or `/dev/stderr` to dump it to console.
 
+#### `APPMAP_OUTPUT_PATH`
+
+File path. If set, an appmap encompassing the whole execution is saved there on shutdown.
+
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.

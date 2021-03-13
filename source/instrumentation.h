@@ -13,10 +13,13 @@ namespace {
     template <>
     constexpr COR_SIGNATURE type_signature<void> = ELEMENT_TYPE_VOID;
 
-    static_assert(sizeof(int) == 4);
     template <>
-    constexpr COR_SIGNATURE type_signature<int> = ELEMENT_TYPE_I4;
+    constexpr COR_SIGNATURE type_signature<int32_t> = ELEMENT_TYPE_I4;
 
+    template <>
+    constexpr COR_SIGNATURE type_signature<uint32_t> = ELEMENT_TYPE_U4;
+
+    static_assert(sizeof(void *) == 8);
     template <typename T>
     constexpr COR_SIGNATURE type_signature<T *> = ELEMENT_TYPE_I8;
 

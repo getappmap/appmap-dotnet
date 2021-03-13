@@ -14,7 +14,8 @@ namespace {
 }
 
 appmap::config::config()
-: module_list_path{get_envar("APPMAP_LIST_MODULES")}
+: module_list_path{get_envar("APPMAP_LIST_MODULES")},
+appmap_output_path{get_envar("APPMAP_OUTPUT_PATH")}
 {
     spdlog::set_level(spdlog::level::debug);
 }

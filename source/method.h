@@ -6,19 +6,20 @@
 #include "clrie/module_info.h"
 
 #include "config.h"
+#include "recorder.h"
 
 namespace appmap {
     struct instrumentation_method : public clrie::instrumentation_method<instrumentation_method>
     {
         std::unordered_set<std::string> modules;
         appmap::config config;
+        appmap::recorder recorder;
+        com::ptr<IProfilerManager> profiler_manager;
 
+        void initialize(com::ptr<IProfilerManager> manager);
         bool should_instrument_method(clrie::method_info method, bool is_rejit);
         void instrument_method(clrie::method_info method, bool is_rejit);
         void on_module_loaded(clrie::module_info module);
         void on_shutdown();
-
-    protected:
-        void method_called();
     };
 }
