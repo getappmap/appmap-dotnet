@@ -134,7 +134,7 @@ namespace clrie {
         }
 
         // Creates an operand instruction of type Cee_Ldarg, or Cee_Ldarg_S, Cee_Ldarg_0, Cee_Ldarg_1, Cee_Ldarg_2...
-        com::ptr<IInstruction> create_load_arg_instruction(USHORT index) {
+        com::ptr<IInstruction> create_load_arg_instruction(USHORT index) const {
             com::ptr<IInstruction> result;
             com::hresult::check(ptr->CreateLoadArgInstruction(index, &result));
             return result;
@@ -161,6 +161,6 @@ namespace clrie {
         }
 
     private:
-        com::ptr<IInstructionFactory> ptr;
+        mutable com::ptr<IInstructionFactory> ptr;
     };    
 }

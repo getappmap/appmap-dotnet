@@ -15,7 +15,7 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manag
 
 void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
 {
-    spdlog::debug("on_module_loaded({})", module.module_name());
+    spdlog::trace("on_module_loaded({})", module.module_name());
     modules.insert(module.module_name());
 }
 
@@ -39,6 +39,9 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
     bool result = [&](){
         if (is_rejit) return false;
 
+        if (test_framework.should_instrument(method))
+            return true;
+
         const auto name = method.full_name();
         for (const auto &pkg : config.packages) {
             if (name.rfind(pkg, 0) == 0) {
@@ -49,7 +52,7 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
         return false;
     }();
 
-    spdlog::debug("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
+    spdlog::trace("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
 
     return result;
 }
@@ -57,6 +60,9 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
 void appmap::instrumentation_method::instrument_method(clrie::method_info method, bool is_rejit)
 {
     spdlog::debug("instrument_method({}, {})", method.full_name(), is_rejit);
+
+    if (test_framework.instrument(method))
+        return;
 
     recorder.instrument(method);
 }

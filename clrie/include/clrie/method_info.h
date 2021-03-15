@@ -1,12 +1,13 @@
 #pragma once
 
 #include <no_sal.h>
+#include <cor.h>
 #include <InstrumentationEngine.h>
 #include "com/ptr.h"
-#include "cor.h"
 #include "clrie/instruction_graph.h"
 #include "clrie/instruction_factory.h"
 #include "clrie/module_info.h"
+#undef __valid // microsoft can't into C++ -- __ names are reserved
 
 template<>
 constexpr GUID com::guid_of<IMetaDataEmit>() noexcept {

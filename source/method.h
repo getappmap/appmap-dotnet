@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "recorder.h"
+#include "test_framework.h"
 
 namespace appmap {
     struct instrumentation_method : public clrie::instrumentation_method<instrumentation_method>
@@ -14,6 +15,7 @@ namespace appmap {
         std::unordered_set<std::string> modules;
         appmap::config config;
         appmap::recorder recorder;
+        appmap::test_framework test_framework;
         com::ptr<IProfilerManager> profiler_manager;
 
         void initialize(com::ptr<IProfilerManager> manager);

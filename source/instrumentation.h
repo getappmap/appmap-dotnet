@@ -19,6 +19,9 @@ namespace {
     template <>
     constexpr COR_SIGNATURE type_signature<uint32_t> = ELEMENT_TYPE_U4;
 
+    template <>
+    constexpr COR_SIGNATURE type_signature<char *> = ELEMENT_TYPE_STRING;
+
     static_assert(sizeof(void *) == 8);
     template <typename T>
     constexpr COR_SIGNATURE type_signature<T *> = ELEMENT_TYPE_I8;

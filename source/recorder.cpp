@@ -8,7 +8,6 @@ using namespace appmap;
 
 void recorder::instrument(clrie::method_info method)
 {
-    const auto f = ELEMENT_TYPE_U8;
     clrie::instruction_graph code = method.instructions();
     auto factory = method.instruction_factory();
     const instrumentation instr{factory, method.module_info().meta_data_emit().as<IMetaDataEmit>()};
