@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <unordered_map>
 
 #include <cor.h>
@@ -11,14 +12,9 @@
 namespace appmap {
     using recording = std::vector<event>;
 
-    struct recorder {
+    namespace recorder {
+        extern appmap::recording events;
+        inline std::mutex mutex;
         void instrument(clrie::method_info method);
-        appmap::recording events;
-
-    protected:
-        void method_called(FunctionID id);
-        void method_returned(FunctionID id);
-
-        std::unordered_map<FunctionID, std::string> method_names;
     };
 }

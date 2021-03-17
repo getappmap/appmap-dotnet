@@ -3,5 +3,5 @@
 #include "recorder.h"
 
 namespace appmap {
-    std::string generate(recording events, com::ptr<IAppDomainCollection> app);
+    std::string generate(recording events);
 }

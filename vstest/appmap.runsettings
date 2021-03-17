@@ -7,4 +7,8 @@
                      codebase="%PWD%/appmap.collector.dll" />
     </InProcDataCollectors>
   </InProcDataCollectionRunSettings>
+  <RunConfiguration>
+    <!-- this is needed in order for the events to be synchronous in XUnit -->
+    <DisableParallelization>true</DisableParallelization>
+  </RunConfiguration>
 </RunSettings>

@@ -14,7 +14,6 @@ namespace appmap {
     {
         std::unordered_set<std::string> modules;
         appmap::config config;
-        appmap::recorder recorder;
         appmap::test_framework test_framework;
         com::ptr<IProfilerManager> profiler_manager;
 

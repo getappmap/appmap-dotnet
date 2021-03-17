@@ -1,24 +1,38 @@
 #include "test_framework.h"
 
 #include <clrie/instruction_factory.h>
+#include <filesystem>
+#include <fstream>
 #include <spdlog/spdlog.h>
 
+#include "generation.h"
 #include "instrumentation.h"
+#include "recorder.h"
+
+using namespace appmap;
+namespace fs = std::filesystem;
 
 namespace {
     constexpr char StartCaseName[] = "AppMap.DataCollector.StartCase";
     constexpr char EndCaseName[] = "AppMap.DataCollector.EndCase";
 
+    std::string case_name;
+
     void startCase(char *full_name) {
+        std::lock_guard lock(appmap::recorder::mutex);
         spdlog::info("Test case start: {}", full_name);
+        case_name = full_name;
+        appmap::recorder::events.clear();
     }
 
     void endCase() {
+        std::lock_guard lock(appmap::recorder::mutex);
         spdlog::info("Test case end");
+        const auto base_path = fs::path("tmp/appmap/vstest");
+        fs::create_directories(base_path);
+        std::ofstream(base_path / (case_name + ".appmap.json")) << generate(appmap::recorder::events);
     }
 }
-
-using namespace appmap;
 
 bool appmap::test_framework::should_instrument(const clrie::method_info method)
 {
