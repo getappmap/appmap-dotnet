@@ -17,14 +17,14 @@ namespace {
     {
         std::lock_guard lock(appmap::recorder::mutex);
         spdlog::debug("{}({})", __FUNCTION__, method_names[id]);
-        recorder::events.push_back({id, event::kind::call});
+        recorder::events.push_back({event_kind::call, id});
     }
 
     void method_returned(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
         spdlog::debug("{}({})", __FUNCTION__, method_names[id]);
-        recorder::events.push_back({id, event::kind::ret});
+        recorder::events.push_back({event_kind::ret, id});
     }
 }
 

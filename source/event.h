@@ -3,12 +3,11 @@
 #include <corprof.h>
 
 namespace appmap {
+    enum class event_kind {
+        call, ret
+    };
     struct event {
-        enum class kind {
-            call, ret
-        };
-
+        event_kind kind;
         FunctionID function;
-        event::kind kind;
     };
 }

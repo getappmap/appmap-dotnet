@@ -89,7 +89,11 @@ add_subdirectory(pal)
 add_subdirectory(com)
 add_subdirectory(clrie)
 
+if (BUILD_TESTING)
+  add_subdirectory(test)
+endif()
+
 target_link_libraries(appmap-instrumentation
-    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp stdc++fs
+    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp stdc++fs doctest
     PUBLIC clrie
 )

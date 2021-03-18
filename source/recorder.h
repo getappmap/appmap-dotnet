@@ -16,5 +16,5 @@ namespace appmap {
         extern appmap::recording events;
         inline std::mutex mutex;
         void instrument(clrie::method_info method);
-    };
+    }
 }
