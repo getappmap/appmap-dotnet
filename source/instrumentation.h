@@ -26,6 +26,9 @@ namespace {
     template <typename T>
     constexpr COR_SIGNATURE type_signature<T *> = ELEMENT_TYPE_I8;
 
+    template <>
+    constexpr COR_SIGNATURE type_signature<bool> = ELEMENT_TYPE_BOOLEAN;
+
     template <typename F>
     struct func_traits;
 

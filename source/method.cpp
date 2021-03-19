@@ -66,3 +66,10 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
 
     recorder::instrument(method);
 }
+
+// This creates a test registry so that a build with tests enabled
+// can still be used as an instrumentation DLL, not only linked
+// with the test runner.
+#define DOCTEST_CONFIG_IMPLEMENTATION_IN_DLL
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>

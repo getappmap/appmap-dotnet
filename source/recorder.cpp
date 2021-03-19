@@ -3,6 +3,7 @@
 #include "recorder.h"
 
 #include "instrumentation.h"
+#include "method_info.h"
 
 using namespace appmap;
 
@@ -11,20 +12,29 @@ namespace appmap::recorder {
 }
 
 namespace {
-    std::unordered_map<FunctionID, std::string> method_names;
-
     void method_called(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        spdlog::debug("{}({})", __FUNCTION__, method_names[id]);
+        const auto &minfo = method_infos.at(id);
+        spdlog::debug("{}({}.{})", __FUNCTION__, minfo.defined_class, minfo.method_id);
         recorder::events.push_back({event_kind::call, id});
     }
 
-    void method_returned(FunctionID id)
+    void method_returned(FunctionID id, bool is_tail)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        spdlog::debug("{}({})", __FUNCTION__, method_names[id]);
+        const auto &minfo = method_infos.at(id);
+        spdlog::debug("{}({}.{}, {})", __FUNCTION__, minfo.defined_class, minfo.method_id, is_tail);
         recorder::events.push_back({event_kind::ret, id});
+    }
+
+    bool is_tail(com::ptr<IInstruction> inst) {
+        try {
+            com::ptr<IInstruction> prev = inst.get(&IInstruction::GetPreviousInstruction);
+            return prev.get(&IInstruction::GetOpCode) == Cee_Tailcall;
+        } catch (const std::system_error &) {
+            return false;
+        }
     }
 }
 
@@ -35,16 +45,18 @@ void recorder::instrument(clrie::method_info method)
     const instrumentation instr{factory, method.module_info().meta_data_emit().as<IMetaDataEmit>()};
 
     FunctionID id = method.function_id();
-    method_names[id] = method.full_name();
+    method_infos[id] = { method.declaring_type().get(&IType::GetName), method.name() };
 
     // prologue
     const auto first = code.first_instruction();
     code.insert_before(first, factory.load_constants(id));
     code.insert_before(first, instr.make_call(&method_called));
 
-    return;
     // epilogue
-    auto ret = code.last_instruction();
-    code.insert_before(first, factory.load_constants(id));
-    code.insert_before(ret, instr.make_call(&method_returned));
+    auto last = code.last_instruction();
+    bool tail = is_tail(last);
+    if (tail)
+        last = last.get(&IInstruction::GetPreviousInstruction);
+    code.insert_before(last, factory.load_constants(id, tail));
+    code.insert_before(last, instr.make_call(&method_returned));
 }

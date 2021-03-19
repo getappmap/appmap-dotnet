@@ -56,6 +56,8 @@ namespace clrie {
                 com::hresult::check(ptr->CreateLongOperandInstruction(Cee_Ldc_I8, reinterpret_cast<uint64_t>(value), &result));
             } else if constexpr (sizeof(T) == sizeof(uint32_t)) {
                 com::hresult::check(ptr->CreateIntOperandInstruction(Cee_Ldc_I4, reinterpret_cast<uint32_t>(value), &result));
+            } else if constexpr (sizeof(T) == sizeof(uint8_t)) {
+                com::hresult::check(ptr->CreateLoadConstInstruction(value, &result));
             } else {
                 static_assert(sizeof(T) < 0, "loading constant of T not implemented");
             }

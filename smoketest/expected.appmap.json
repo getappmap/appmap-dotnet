@@ -1,0 +1,16 @@
+{
+  "events": [
+    {
+      "defined_class": "hello.Program",
+      "event": "call",
+      "id": 1,
+      "method_id": "Main"
+    },
+    {
+      "defined_class": "hello.Program",
+      "event": "return",
+      "id": 2,
+      "method_id": "Main"
+    }
+  ]
+}
