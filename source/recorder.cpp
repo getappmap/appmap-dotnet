@@ -15,16 +15,12 @@ namespace {
     void method_called(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        const auto &minfo = method_infos.at(id);
-        spdlog::debug("{}({}.{})", __FUNCTION__, minfo.defined_class, minfo.method_id);
         recorder::events.push_back({event_kind::call, id});
     }
 
-    void method_returned(FunctionID id, bool is_tail)
+    void method_returned(FunctionID id, [[maybe_unused]] bool is_tail)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        const auto &minfo = method_infos.at(id);
-        spdlog::debug("{}({}.{}, {})", __FUNCTION__, minfo.defined_class, minfo.method_id, is_tail);
         recorder::events.push_back({event_kind::ret, id});
     }
 
@@ -55,8 +51,10 @@ void recorder::instrument(clrie::method_info method)
     // epilogue
     auto last = code.last_instruction();
     bool tail = is_tail(last);
-    if (tail)
+    if (tail) {
+        spdlog::warn("Tail call detected in {} -- tail calls aren't fully supported yet, so your appmap might be incorrect.\n\tPlease report at https://github.com/applandinc/appmap-dotnet/issues", method.full_name());
         last = last.get(&IInstruction::GetPreviousInstruction);
+    }
     code.insert_before(last, factory.load_constants(id, tail));
     code.insert_before(last, instr.make_call(&method_returned));
 }
