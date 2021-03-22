@@ -61,6 +61,13 @@ CPMAddPackage(
   VERSION 0.37.0
 )
 
+CPMAddPackage(
+  NAME range-v3
+  GITHUB_REPOSITORY ericniebler/range-v3
+  GIT_TAG 0.11.0
+  VERSION 0.11.0
+)
+
 target_compile_options(yaml-cpp PRIVATE -fPIC)
 
 # ---- Add source files ----
@@ -94,6 +101,6 @@ if (BUILD_TESTING)
 endif()
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp stdc++fs doctest
+    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp stdc++fs doctest range-v3
     PUBLIC clrie
 )

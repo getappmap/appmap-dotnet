@@ -1,10 +1,30 @@
 {
+  "classMap": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "name": "Main",
+              "static": true,
+              "type": "function"
+            }
+          ],
+          "name": "Program",
+          "type": "class"
+        }
+      ],
+      "name": "hello",
+      "type": "package"
+    }
+  ],
   "events": [
     {
       "defined_class": "hello.Program",
       "event": "call",
       "id": 1,
-      "method_id": "Main"
+      "method_id": "Main",
+      "static": true
     },
     {
       "event": "return",

@@ -13,7 +13,7 @@ namespace AppMap
         }
 
         public void TestCaseStart(TestCaseStartArgs testCaseStartArgs) {
-            StartCase(testCaseStartArgs.TestCase.FullyQualifiedName);
+            StartCase(testCaseStartArgs.TestCase.DisplayName);
         }
 
         public void TestCaseEnd(TestCaseEndArgs testCaseEndArgs) {

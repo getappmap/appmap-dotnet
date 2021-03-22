@@ -41,7 +41,7 @@ void recorder::instrument(clrie::method_info method)
     const instrumentation instr{factory, method.module_info().meta_data_emit().as<IMetaDataEmit>()};
 
     FunctionID id = method.function_id();
-    method_infos[id] = { method.declaring_type().get(&IType::GetName), method.name() };
+    method_infos[id] = { method.declaring_type().get(&IType::GetName), method.name(), (method.is_static() || method.is_static_constructor()) };
 
     // prologue
     const auto first = code.first_instruction();

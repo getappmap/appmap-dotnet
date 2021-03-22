@@ -1,7 +1,13 @@
-
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
+#include <range/v3/iterator/operations.hpp>
+#include <range/v3/view/split.hpp>
+#include <range/v3/view/transform.hpp>
+#include <range/v3/view/unique.hpp>
+
+#include <algorithm>
+#include <unordered_set>
 
 #include "classmap.h"
 #include "generation.h"
@@ -12,20 +18,51 @@ using namespace nlohmann;
 
 namespace {
     template <typename T>
-    constexpr std::string code_object_type(const T &) {
+    constexpr std::string code_object_type(const T &arg) {
         using namespace appmap::classmap;
         if constexpr (std::is_same_v<T, function>)
             return "function";
-        else if constexpr (std::is_same_v<T, package>)
-            return "package";
-        else
-            return "class";
+        else if constexpr (std::is_same_v<T, code_container>) {
+            if (arg.kind == code_container::package)
+                return "package";
+            else
+                return "class";
+        }
+    }
+
+    classmap::classmap classmap_of_recording(const recording &rec) {
+        using namespace ranges::views;
+        classmap::classmap map;
+
+        for (const method_info &method: rec
+            | transform([](const auto &ev) { return ev.function; }) | unique
+            | transform([](const FunctionID fun) { return method_infos.at(fun); }))
+        {
+            classmap::code_container *code = &map;
+            for (std::string &&part: std::string_view(method.defined_class) | split('.')
+                | transform([](auto &&rng) { return std::string(&*rng.begin(), ranges::distance(rng)); })
+            ) {
+                auto [it, inserted] = code->try_emplace(part, std::make_unique<classmap::code_object>(classmap::code_container()));
+                code = &std::get<classmap::code_container>(*(it->second));
+                if (inserted)
+                    code->kind = classmap::code_container::package;
+            }
+
+            code->kind = classmap::code_container::klass;
+            code->try_emplace(method.method_id, std::make_unique<classmap::code_object>(classmap::function{method.is_static}));
+        }
+
+        return map;
     }
 }
 
 
 namespace appmap {
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(method_info, defined_class, method_id)
+    void to_json(json &j, const method_info &m) {
+        j["defined_class"] = m.defined_class;
+        j["method_id"] = m.method_id;
+        j["static"] = m.is_static;
+    }
 
     NLOHMANN_JSON_SERIALIZE_ENUM(event_kind, {
         { event_kind::call, "call" },
@@ -95,7 +132,7 @@ namespace appmap {
 
 std::string appmap::generate(appmap::recording events)
 {
-    return json{ { "events", events } }.dump();
+    return json{ { "events", events }, { "classMap", classmap_of_recording(events) } }.dump(2);
 }
 
 std::string appmap::generate(const appmap::classmap::classmap &map)
@@ -110,23 +147,45 @@ TEST_CASE("basic generation") {
         { event_kind::ret, 43 },
         { event_kind::ret, 42 },
     };
-    method_infos[42] = { "Some.Class", "Method" };
-    method_infos[43] = { "Some.Class", "OtherMethod" };
+    method_infos[42] = { "Some.Class", "Method", false };
+    method_infos[43] = { "Some.Class", "OtherMethod", true };
 
     CHECK(json::parse(generate(events)) == R"(
         {
+            "classMap": [{
+                "name": "Some",
+                "type": "package",
+                "children": [{
+                    "name": "Class",
+                    "type": "class",
+                    "children": [
+                        {
+                            "name": "OtherMethod",
+                            "type": "function",
+                            "static": true
+                        },
+                        {
+                            "name": "Method",
+                            "type": "function",
+                            "static": false
+                        }
+                    ]
+                }]
+            }],
             "events": [
                 {
                     "id": 1,
                     "event": "call",
                     "defined_class": "Some.Class",
-                    "method_id": "Method"
+                    "method_id": "Method",
+                    "static": false
                 },
                 {
                     "id": 2,
                     "event": "call",
                     "defined_class": "Some.Class",
-                    "method_id": "OtherMethod"
+                    "method_id": "OtherMethod",
+                    "static": true
                 },
                 {
                     "id": 3,
@@ -140,29 +199,4 @@ TEST_CASE("basic generation") {
                 }
             ]
         })"_json);
-}
-
-TEST_CASE("classmap generation") {
-    const classmap::classmap class_map = {
-        { "hello", classmap::package {
-            { "Program", classmap::klass {
-                { "Main", classmap::function { true } }
-            }}
-        }}
-    };
-
-    CHECK(json::parse(generate(class_map)) == R"(
-        [{
-            "name": "hello",
-            "type": "package",
-            "children": [{
-                "name": "Program",
-                "type": "class",
-                "children": [{
-                    "name": "Main",
-                    "type": "function",
-                    "static": true
-                }]
-            }]
-        }])"_json);
 }
