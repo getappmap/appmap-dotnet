@@ -3,7 +3,9 @@
 #include <string>
 #include <unordered_map>
 
+#include <cor.h>
 #include <corprof.h>
+#undef __valid
 
 namespace appmap {
     struct method_info {

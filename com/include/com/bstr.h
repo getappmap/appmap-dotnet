@@ -2,7 +2,9 @@
 
 #include <utility>
 #include <pal_mstypes.h>
+#include <palrt.h>
 #include <utf8.h>
+#undef __valid
 
 namespace com {
 

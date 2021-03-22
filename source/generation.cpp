@@ -1,12 +1,28 @@
+
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 
+#include "classmap.h"
 #include "generation.h"
 #include "method_info.h"
 
 using namespace appmap;
 using namespace nlohmann;
+
+namespace {
+    template <typename T>
+    constexpr std::string code_object_type(const T &) {
+        using namespace appmap::classmap;
+        if constexpr (std::is_same_v<T, function>)
+            return "function";
+        else if constexpr (std::is_same_v<T, package>)
+            return "package";
+        else
+            return "class";
+    }
+}
+
 
 namespace appmap {
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(method_info, defined_class, method_id)
@@ -47,11 +63,44 @@ namespace appmap {
             j.push_back(jev);
         }
     }
+
+    namespace classmap {
+        void to_json(json &j, const code_container &co);
+        void to_json(json &j, const code_object &co) {
+            std::visit([&j](const auto &arg) {
+                using t = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<t, function>) {
+                    j["static"] = arg.is_static;
+                } else {
+                    j["children"] = arg;
+                }
+                j["type"] = code_object_type(arg);
+            }, co);
+        }
+
+        void to_json(json &j, const code_object_ptr &p) {
+            to_json(j, *p);
+        }
+
+        void to_json(json &j, const code_container &co) {
+            j = json::array();
+            for (const auto &[k, v]: co) {
+                json el = *v;
+                el["name"] = k;
+                j.push_back(el);
+            }
+        }
+    }
 }
 
 std::string appmap::generate(appmap::recording events)
 {
     return json{ { "events", events } }.dump();
+}
+
+std::string appmap::generate(const appmap::classmap::classmap &map)
+{
+    return json(map).dump();
 }
 
 TEST_CASE("basic generation") {
@@ -91,4 +140,29 @@ TEST_CASE("basic generation") {
                 }
             ]
         })"_json);
+}
+
+TEST_CASE("classmap generation") {
+    const classmap::classmap class_map = {
+        { "hello", classmap::package {
+            { "Program", classmap::klass {
+                { "Main", classmap::function { true } }
+            }}
+        }}
+    };
+
+    CHECK(json::parse(generate(class_map)) == R"(
+        [{
+            "name": "hello",
+            "type": "package",
+            "children": [{
+                "name": "Program",
+                "type": "class",
+                "children": [{
+                    "name": "Main",
+                    "type": "function",
+                    "static": true
+                }]
+            }]
+        }])"_json);
 }
