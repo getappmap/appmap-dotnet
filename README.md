@@ -31,6 +31,11 @@ Runsettings file to set up the collector correctly is included.
 
 ### Environment variables
 
+#### `APPMAP_CONFIG`
+
+File path. Allows using a specific config file. By default, `appmap.yml` is searched in the current
+directory and its ancestors.
+
 #### `APPMAP_LIST_MODULES`
 
 File path. If set, the list of all module names seen is printed there on shutdown.

@@ -27,6 +27,14 @@ namespace {
 
         return std::nullopt;
     }
+
+    std::optional<fs::path> config_file_path() {
+        const auto from_env = get_envar("APPMAP_CONFIG");
+        if (from_env)
+            return from_env;
+        else
+            return find_file("appmap.yml");
+    }
 }
 
 appmap::config::config()
@@ -35,7 +43,7 @@ appmap_output_path{get_envar("APPMAP_OUTPUT_PATH")}
 {
     spdlog::set_level(spdlog::level::debug);
 
-    if (const auto config_path = find_file("appmap.yml")) {
+    if (const auto config_path = config_file_path()) {
         const auto config_file = YAML::LoadFile(*config_path);
         if (const auto &pkgs = config_file["packages"])
             packages = pkgs.as<decltype(packages)>();
