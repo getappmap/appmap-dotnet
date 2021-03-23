@@ -21,6 +21,12 @@ For convenience [run](scripts/run.sh) script is provided that sets it all up for
 by `docker-build.sh`. If you're building locally, you can `ln -sf build/libappmap-instrumentation.so out`
 so that the current binary is used.
 
+### Microsoft Testing Framework (aka VSTest) integration
+
+Directory `vstest` contains a data collector which, when used together with the instrumentation, enables
+generating individual appmaps for each test case; this works with any test framework integrated with MSTest.
+Runsettings file to set up the collector correctly is included.
+
 ## Configuration
 
 ### Environment variables
@@ -37,6 +43,7 @@ File path. If set, an appmap encompassing the whole execution is saved there on 
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.
+`vstest` directory requires dotnet sdk to build.
 
 You can use `scripts/docker-build.sh` to build both CLRIE and this instrumentation method in Docker.
 On success, `out` directory will contain all the files needed to use this instrumentation method.
