@@ -16,6 +16,8 @@ if (FakeIt_ADDED)
   target_include_directories(FakeIt INTERFACE "${FakeIt_SOURCE_DIR}/single_header/standalone")
 endif()
 
+target_link_libraries(appmap-instrumentation PRIVATE FakeIt)
+
 file(GLOB sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 add_executable(appmap-test ${sources})
 target_link_libraries(appmap-test doctest appmap-instrumentation FakeIt)
