@@ -45,6 +45,11 @@ On Linux, you can use `/dev/stdout` or `/dev/stderr` to dump it to console.
 
 File path. If set, an appmap encompassing the whole execution is saved there on shutdown.
 
+#### `APPMAP_LOG_LEVEL`
+
+Log level, one of `trace`, `debug`, `info`, `warning`, `error`, `critical`, `off`.
+Defaults to `info`.
+
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.

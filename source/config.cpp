@@ -49,7 +49,10 @@ appmap::config appmap::config::load()
     c.appmap_output_path = get_envar("APPMAP_OUTPUT_PATH");
 
     // it's probably not the best place for this, but it'll do
-    spdlog::set_level(spdlog::level::debug);
+    if (const auto &log_level = get_envar("APPMAP_LOG_LEVEL"))
+        spdlog::set_level(spdlog::level::from_str(*log_level));
+    else
+        spdlog::set_level(spdlog::level::info);
 
     if (const auto config_path = config_file_path())
         load_config(c, YAML::LoadFile(*config_path));
