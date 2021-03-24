@@ -35,17 +35,35 @@ namespace {
         else
             return find_file("appmap.yml");
     }
+
+    void load_config(appmap::config &c, const YAML::Node &config_file) {
+        if (const auto &pkgs = config_file["packages"])
+            c.classes = pkgs.as<decltype(c.classes)>();
+    }
 }
 
-appmap::config::config()
-: module_list_path{get_envar("APPMAP_LIST_MODULES")},
-appmap_output_path{get_envar("APPMAP_OUTPUT_PATH")}
+appmap::config appmap::config::load()
 {
+    config c;
+    c.module_list_path = get_envar("APPMAP_LIST_MODULES");
+    c.appmap_output_path = get_envar("APPMAP_OUTPUT_PATH");
+
+    // it's probably not the best place for this, but it'll do
     spdlog::set_level(spdlog::level::debug);
 
-    if (const auto config_path = config_file_path()) {
-        const auto config_file = YAML::LoadFile(*config_path);
-        if (const auto &pkgs = config_file["packages"])
-            packages = pkgs.as<decltype(packages)>();
+    if (const auto config_path = config_file_path())
+        load_config(c, YAML::LoadFile(*config_path));
+
+    return c;
+}
+
+bool appmap::config::should_instrument(clrie::method_info method)
+{
+    const auto name = method.full_name();
+    for (const auto &cls : classes) {
+        if (name.rfind(cls, 0) == 0) {
+            return true;
+        }
     }
+    return false;
 }

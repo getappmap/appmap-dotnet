@@ -39,17 +39,7 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
     bool result = [&](){
         if (is_rejit) return false;
 
-        if (test_framework.should_instrument(method))
-            return true;
-
-        const auto name = method.full_name();
-        for (const auto &pkg : config.packages) {
-            if (name.rfind(pkg, 0) == 0) {
-                return true;
-            }
-        }
-
-        return false;
+        return test_framework.should_instrument(method) || config.should_instrument(method);
     }();
 
     spdlog::trace("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
