@@ -29,6 +29,22 @@ Runsettings file to set up the collector correctly is included.
 
 ## Configuration
 
+### Configuration file
+
+Appmap-dotnet instruments only specific code packages; which are these can be configured by
+creating an `appmap.yml` file in the project root directory, for example:
+
+```yaml
+name: my-project
+packages:
+- class: MyProject.UtilityClass
+- module: MyProject.Business.dll
+- path: /usr/lib/util
+```
+
+The path to the file can be explicitly set in `APPMAP_CONFIG` environment variable. Otherwise, appmap-dotnet
+searches current directory and all its ancestors for `appmap.yml`.
+
 ### Environment variables
 
 #### `APPMAP_CLASSMAP`
