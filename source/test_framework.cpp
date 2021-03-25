@@ -5,6 +5,7 @@
 #include <fstream>
 #include <spdlog/spdlog.h>
 
+#include "config.h"
 #include "generation.h"
 #include "instrumentation.h"
 #include "recorder.h"
@@ -30,7 +31,7 @@ namespace {
         spdlog::info("Test case end");
         const auto base_path = fs::path("tmp/appmap/vstest");
         fs::create_directories(base_path);
-        std::ofstream(base_path / (case_name + ".appmap.json")) << generate(appmap::recorder::events);
+        std::ofstream(base_path / (case_name + ".appmap.json")) << generate(appmap::recorder::events, appmap::config::instance().generate_classmap);
     }
 }
 

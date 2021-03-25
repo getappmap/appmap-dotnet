@@ -13,7 +13,7 @@ namespace appmap {
     struct instrumentation_method : public clrie::instrumentation_method<instrumentation_method>
     {
         std::unordered_set<std::string> modules;
-        appmap::config config = appmap::config::load();
+        appmap::config &config = appmap::config::instance();
         appmap::test_framework test_framework;
         com::ptr<IProfilerManager> profiler_manager;
 

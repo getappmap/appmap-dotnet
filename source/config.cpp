@@ -20,6 +20,23 @@ namespace {
         }
     }
 
+    bool get_bool_envar(const char *name) {
+        const auto result = std::getenv(name);
+        if (result == nullptr)
+            return false;
+        else switch(tolower(result[0])) {
+            case '1':
+            case 'y':
+            case 't':
+            case 'j':
+                return true;
+            case 'o':
+                return tolower(result[1]) == 'n';
+            default:
+                return false;
+        }
+    }
+
     std::optional<fs::path> find_file(const std::string name) {
         for (fs::path dir = fs::current_path(); dir != dir.root_path(); dir = dir.parent_path()) {
             const auto file = dir / name;
@@ -41,28 +58,48 @@ namespace {
     }
 
     void load_config(appmap::config &c, const YAML::Node &config_file) {
-        if (const auto &pkgs = config_file["packages"])
-            for (const auto &pkg: pkgs)
-                if (const auto &mod = pkg["module"])
-                    c.modules.push_back(mod.as<std::string>());
+        if (const auto &pkgs = config_file["packages"]) {
+            for (const auto &pkg: pkgs) {
+                if (pkg.IsScalar()) {
+                    c.classes.push_back(pkg.as<std::string>());
+                    continue;
+                } else if (pkg.IsMap()) {
+                    if (const auto &mod = pkg["module"]) {
+                        c.modules.push_back(mod.as<std::string>());
+                        continue;
+                    } else if (const auto &cls = pkg["class"]) {
+                        c.classes.push_back(cls.as<std::string>());
+                        continue;
+                    }
+                }
+                spdlog::warn("unrecognized package specification in config file: {}", pkg);
+            }
+        }
+    }
+
+    appmap::config load_default()
+    {
+        config c;
+        c.module_list_path = get_envar("APPMAP_LIST_MODULES");
+        c.appmap_output_path = get_envar("APPMAP_OUTPUT_PATH");
+        c.generate_classmap = get_bool_envar("APPMAP_CLASSMAP");
+
+        // it's probably not the best place for this, but it'll do
+        if (const auto &log_level = get_envar("APPMAP_LOG_LEVEL"))
+            spdlog::set_level(spdlog::level::from_str(*log_level));
+        else
+            spdlog::set_level(spdlog::level::info);
+
+        if (const auto config_path = config_file_path())
+            load_config(c, YAML::LoadFile(*config_path));
+
+        return c;
     }
 }
 
-appmap::config appmap::config::load()
+appmap::config & appmap::config::instance()
 {
-    config c;
-    c.module_list_path = get_envar("APPMAP_LIST_MODULES");
-    c.appmap_output_path = get_envar("APPMAP_OUTPUT_PATH");
-
-    // it's probably not the best place for this, but it'll do
-    if (const auto &log_level = get_envar("APPMAP_LOG_LEVEL"))
-        spdlog::set_level(spdlog::level::from_str(*log_level));
-    else
-        spdlog::set_level(spdlog::level::info);
-
-    if (const auto config_path = config_file_path())
-        load_config(c, YAML::LoadFile(*config_path));
-
+    static appmap::config c = load_default();
     return c;
 }
 
@@ -71,7 +108,21 @@ bool appmap::config::should_instrument(clrie::method_info method)
     const auto module = method.module_info();
     const std::string module_name = module.mut().get(&IModuleInfo::GetModuleName);
 
-    return std::find(modules.begin(), modules.end(), module_name) != modules.end();
+    if (std::find(modules.begin(), modules.end(), module_name) != modules.end())
+        return true;
+
+    const auto full_name = method.full_name();
+
+    for (const auto &cls: classes) {
+        if (cls.length() > full_name.length()) continue;
+        if (full_name.rfind(cls, 0) == 0 && (
+            full_name.length() == cls.length() ||
+            full_name[cls.length()] == '.'
+        ))
+            return true;
+    }
+
+    return false;
 }
 
 #ifndef DOCTEST_CONFIG_DISABLE
@@ -147,20 +198,40 @@ struct ComMock : public Mock<C>
     }
 };
 
-TEST_CASE("module matching")
+TEST_CASE("method matching")
 {
     config c;
-    load_config(c, YAML::Load("packages: [module: test.dll]"));
 
     ComMock<IModuleInfo> module;
     ComMock<IMethodInfo> method;
     Method(method, GetModuleInfo) = &module.get();
     Method(module, GetModuleName) = "test.dll";
+    Method(method, GetFullName) = "Extinction.Rebellion.Protest";
 
-    CHECK(c.should_instrument(&method.get()));
+    SUBCASE("by module") {
+        load_config(c, YAML::Load("packages: [module: test.dll]"));
 
-    Method(module, GetModuleName) = "other.dll";
-    CHECK(!c.should_instrument(&method.get()));
+        CHECK(c.should_instrument(&method.get()));
+
+        Method(module, GetModuleName) = "other.dll";
+        CHECK(!c.should_instrument(&method.get()));
+    }
+
+    SUBCASE("by class") {
+        SUBCASE("with qualifier") {
+            load_config(c, YAML::Load("packages: [class: Extinction.Rebellion]"));
+        }
+
+        SUBCASE("naked") {
+            load_config(c, YAML::Load("packages: [Extinction.Rebellion]"));
+        }
+
+        CHECK(c.should_instrument(&method.get()));
+
+        Method(method, GetFullName) = "Extinction.Rebellions.Protest";
+
+        CHECK(!c.should_instrument(&method.get()));
+    }
 }
 
 #endif // testing enabled

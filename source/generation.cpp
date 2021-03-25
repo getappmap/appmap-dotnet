@@ -130,14 +130,12 @@ namespace appmap {
     }
 }
 
-std::string appmap::generate(appmap::recording events)
+std::string appmap::generate(appmap::recording events, bool generate_classmap)
 {
-    return json{ { "events", events }, { "classMap", classmap_of_recording(events) } }.dump(2);
-}
-
-std::string appmap::generate(const appmap::classmap::classmap &map)
-{
-    return json(map).dump();
+    json result = { { "events", events } };
+    if (generate_classmap)
+        result["classMap"] = classmap_of_recording(events);
+    return result.dump(2);
 }
 
 TEST_CASE("basic generation") {
@@ -150,7 +148,7 @@ TEST_CASE("basic generation") {
     method_infos[42] = { "Some.Class", "Method", false };
     method_infos[43] = { "Some.Class", "OtherMethod", true };
 
-    CHECK(json::parse(generate(events)) == R"(
+    CHECK(json::parse(generate(events, true)) == R"(
         {
             "classMap": [{
                 "name": "Some",

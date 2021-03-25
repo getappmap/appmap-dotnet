@@ -31,6 +31,11 @@ Runsettings file to set up the collector correctly is included.
 
 ### Environment variables
 
+#### `APPMAP_CLASSMAP`
+
+If set and truthy, generate a classmap in the appmap files.
+Currently disabled by default because the vscode extension chokes on classmaps without source location information.
+
 #### `APPMAP_CONFIG`
 
 File path. Allows using a specific config file. By default, `appmap.yml` is searched in the current

@@ -30,7 +30,7 @@ void appmap::instrumentation_method::on_shutdown()
         }
     }
     if (config.appmap_output_path) {
-        std::ofstream(*config.appmap_output_path) << appmap::generate(recorder::events);
+        std::ofstream(*config.appmap_output_path) << appmap::generate(recorder::events, config.generate_classmap);
     }
 }
 

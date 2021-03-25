@@ -13,7 +13,9 @@ namespace appmap {
         std::vector<std::string> classes;
         std::vector<std::string> modules;
 
-        static config load();
+        bool generate_classmap = false;
+
+        static config &instance();
         bool should_instrument(clrie::method_info method);
     };
 }
