@@ -11,6 +11,7 @@ namespace appmap {
         std::optional<std::filesystem::path> module_list_path;
         std::optional<std::filesystem::path> appmap_output_path;
         std::filesystem::path base_path = std::filesystem::current_path();
+        std::filesystem::path appmap_output_dir() const noexcept;
 
         std::vector<std::string> classes;
         std::vector<std::string> modules;
@@ -20,5 +21,8 @@ namespace appmap {
 
         static config &instance();
         bool should_instrument(clrie::method_info method);
+
+    private:
+        mutable std::optional<std::filesystem::path> output_dir;
     };
 }

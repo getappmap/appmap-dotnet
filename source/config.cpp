@@ -100,6 +100,8 @@ namespace {
             if (!basepath)
                 c.base_path = (*config_path).parent_path();
             load_config(c, YAML::LoadFile(*config_path));
+        } else {
+            spdlog::critical("appmap configuration file not found");
         }
 
         return c;
@@ -149,6 +151,14 @@ bool appmap::config::should_instrument(clrie::method_info method)
     }
 
     return false;
+}
+
+std::filesystem::path appmap::config::appmap_output_dir() const noexcept
+{
+    if (!output_dir)
+        output_dir = get_envar("APPMAP_OUTPUT_DIR").value_or(base_path / "tmp" / "appmap");
+
+    return *output_dir;
 }
 
 #ifndef DOCTEST_CONFIG_DISABLE

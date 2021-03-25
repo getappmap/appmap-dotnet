@@ -1,6 +1,8 @@
 #include <doctest/doctest.h>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/bundled/ranges.h>
+#include <range/v3/algorithm/any_of.hpp>
 #include <range/v3/iterator/operations.hpp>
 #include <range/v3/view/split.hpp>
 #include <range/v3/view/transform.hpp>
@@ -87,13 +89,25 @@ namespace appmap {
                 jev = ev;
                 stack.push_back({ev.function, id});
             } else if (ev.kind == event_kind::ret) {
-                assert(!stack.empty());
-                const auto &parent = stack.back();
-                if (parent.fid != ev.function) {
-                    spdlog::error("Function mismatch on return; your appmap will be incorrect.\n\tPlease report at https://github.com/applandinc/appmap-dotnet/issues");
+                if (stack.empty()) {
+                    // known bug
+                    spdlog::debug("stack empty on return, ignoring");
                     continue;
                 }
-                jev = { { "event", "return" }, { "parent_id", parent.ev } };
+                if (stack.back().fid != ev.function) {
+                    // known bug
+                    spdlog::debug("function mismatch detected on return; function: {}, stack: {}", ev.function, stack | ranges::views::transform([](auto &ev){ return ev.fid; }));
+                    if (ranges::any_of(stack, [fid = ev.function](const auto &ev) { return ev.fid == fid; })) {
+                        // try to do out best by generating the missing returns
+                        while (stack.back().fid != ev.function) {
+                            j.push_back({ { "event", "return" }, { "parent_id", stack.back().ev }, { "id", id++ } });
+                            stack.pop_back();
+                        }
+                    } else {
+                        // ok, this is super weird, did we miss the call? do nothing
+                    }
+                }
+                jev = { { "event", "return" }, { "parent_id", stack.back().ev } };
                 stack.pop_back();
             }
             jev["id"] = id++;

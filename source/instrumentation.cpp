@@ -6,7 +6,6 @@ using namespace appmap;
 
 appmap::instrumentation::instruction_sequence appmap::instrumentation::make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const
 {
-    spdlog::debug("{}({}, {})", __FUNCTION__, fn, signature);
     mdToken token;
     com::hresult::check(metadata->GetTokenFromSig(signature.data(), signature.size(), &token));
     return {

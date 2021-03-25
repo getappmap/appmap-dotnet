@@ -21,17 +21,19 @@ namespace {
 
     void startCase(char *full_name) {
         std::lock_guard lock(appmap::recorder::mutex);
-        spdlog::info("Test case start: {}", full_name);
+        spdlog::debug("Test case start: {}", full_name);
         case_name = full_name;
         appmap::recorder::events.clear();
     }
 
     void endCase() {
+        const config &c = appmap::config::instance();
         std::lock_guard lock(appmap::recorder::mutex);
-        spdlog::info("Test case end");
-        const auto base_path = fs::path("tmp/appmap/vstest");
+        const auto base_path = c.appmap_output_dir();
         fs::create_directories(base_path);
-        std::ofstream(base_path / (case_name + ".appmap.json")) << generate(appmap::recorder::events, appmap::config::instance().generate_classmap);
+        const auto outpath = base_path / (case_name + ".appmap.json");
+        std::ofstream(outpath) << generate(appmap::recorder::events, c.generate_classmap);
+        spdlog::info("Wrote {}", outpath.string());
     }
 }
 

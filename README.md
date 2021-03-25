@@ -68,6 +68,11 @@ directory and its ancestors.
 File path. If set, the list of all module names seen is printed there on shutdown.
 On Linux, you can use `/dev/stdout` or `/dev/stderr` to dump it to console.
 
+#### `APPMAP_OUTPUT_DIR`
+
+When instrumenting unit tests, appmaps are written to this directory. Defaults to
+`$APPMAP_BASEPATH/tmp/appmap`.
+
 #### `APPMAP_OUTPUT_PATH`
 
 File path. If set, an appmap encompassing the whole execution is saved there on shutdown.
