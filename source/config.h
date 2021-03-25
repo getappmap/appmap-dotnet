@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -7,11 +8,13 @@
 
 namespace appmap {
     struct config {
-        std::optional<std::string> module_list_path;
-        std::optional<std::string> appmap_output_path;
+        std::optional<std::filesystem::path> module_list_path;
+        std::optional<std::filesystem::path> appmap_output_path;
+        std::filesystem::path base_path = std::filesystem::current_path();
 
         std::vector<std::string> classes;
         std::vector<std::string> modules;
+        std::vector<std::filesystem::path> paths;
 
         bool generate_classmap = false;
 

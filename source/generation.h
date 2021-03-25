@@ -5,5 +5,5 @@
 #include "recorder.h"
 
 namespace appmap {
-    std::string generate(recording events, bool generate_classmap = false);
+    std::string generate(recording events, bool generate_classmap);
 }

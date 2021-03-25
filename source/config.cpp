@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <doctest/doctest.h>
-#include <filesystem>
 #include <spdlog/spdlog.h>
 #include <yaml-cpp/yaml.h>
 #include <utf8.h>
+#include <spdlog/fmt/bundled/ostream.h>
 
 #include "config.h"
 
@@ -70,6 +70,9 @@ namespace {
                     } else if (const auto &cls = pkg["class"]) {
                         c.classes.push_back(cls.as<std::string>());
                         continue;
+                    } else if (const auto &path = pkg["path"]) {
+                        c.paths.push_back(path.as<std::string>());
+                        continue;
                     }
                 }
                 spdlog::warn("unrecognized package specification in config file: {}", pkg);
@@ -90,10 +93,20 @@ namespace {
         else
             spdlog::set_level(spdlog::level::info);
 
-        if (const auto config_path = config_file_path())
+        if (const auto config_path = config_file_path()) {
+            c.base_path = (*config_path).parent_path();
             load_config(c, YAML::LoadFile(*config_path));
+        }
 
         return c;
+    }
+
+    fs::path resolve(const fs::path &path, const fs::path &base) {
+        assert(path.is_relative());
+        fs::path res = fs::weakly_canonical(base / path);
+        if (res.filename().empty())
+            res = res.parent_path();
+        return res;
     }
 }
 
@@ -110,6 +123,15 @@ bool appmap::config::should_instrument(clrie::method_info method)
 
     if (std::find(modules.begin(), modules.end(), module_name) != modules.end())
         return true;
+
+    const fs::path module_path = std::string(module.mut().get(&IModuleInfo::GetFullPath));
+
+    for (fs::path &p: paths) {
+        if (p.is_relative())
+            p = resolve(p, base_path);
+        if (const auto &[end, _] = std::mismatch(p.begin(), p.end(), module_path.begin()); end == p.end())
+            return true;
+    }
 
     const auto full_name = method.full_name();
 
@@ -205,11 +227,12 @@ TEST_CASE("method matching")
     ComMock<IModuleInfo> module;
     ComMock<IMethodInfo> method;
     Method(method, GetModuleInfo) = &module.get();
-    Method(module, GetModuleName) = "test.dll";
+    Method(module, GetModuleName) = "xr.dll";
+    Method(module, GetFullPath) = "/src/xr/bin/xr.dll";
     Method(method, GetFullName) = "Extinction.Rebellion.Protest";
 
     SUBCASE("by module") {
-        load_config(c, YAML::Load("packages: [module: test.dll]"));
+        load_config(c, YAML::Load("packages: [module: xr.dll]"));
 
         CHECK(c.should_instrument(&method.get()));
 
@@ -229,6 +252,23 @@ TEST_CASE("method matching")
         CHECK(c.should_instrument(&method.get()));
 
         Method(method, GetFullName) = "Extinction.Rebellions.Protest";
+
+        CHECK(!c.should_instrument(&method.get()));
+    }
+
+    SUBCASE("by path") {
+        SUBCASE("absolute") {
+            load_config(c, YAML::Load("packages: [path: /src/xr]"));
+        }
+
+        SUBCASE("relative") {
+            load_config(c, YAML::Load("packages: [path: .]"));
+            c.base_path = "/src/xr";
+        }
+
+        CHECK(c.should_instrument(&method.get()));
+
+        Method(module, GetFullPath) = "/usr/share/xr.dll";
 
         CHECK(!c.should_instrument(&method.get()));
     }
