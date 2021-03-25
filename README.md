@@ -1,8 +1,25 @@
 # AppMap-dotnet
 
+AppMap-dotnet records the execution of .net code. Note currently only Linux is supported.
+
 ## Usage
 
-Currently only Linux is supported. You need [CLR Instrumentation Engine](https://github.com/microsoft/CLRInstrumentationEngine/)
+An `dotnet-appmap` script is provided for ease of use; it automatically configures the runtime environment.
+See details below (or the script itself), or just dive in with the release tarball:
+```sh-session
+$ tar xvf ~/Download/appmap-dotnet-*.tar.bz2 -C ~/opt
+$ ln -s ~/opt/appmap-dotnet-*/dotnet-appmap ~/.local/bin # or anywhere on the PATH
+$ cd ~/projects/myproject
+$ echo "packages: [ class: MyProject ]" > appmap.yml
+$ APPMAP_OUTPUT_PATH=/dev/stdout dotnet appmap exec bin/myproject.dll
+$ dotnet appmap test
+```
+
+Note it currently requires libxml2 and libunwind8, you might need to install these two. If libraries are missing it will silently fail to work.
+
+### Details
+
+You need [CLR Instrumentation Engine](https://github.com/microsoft/CLRInstrumentationEngine/)
 binary, [config/ProductionBreakpoints_x64.config](config/ProductionBreakpoints_x64.config) and the built binary from this project.
 Put all three files, `libInstrumentationEngine.so`, `ProductionBreakpoints_x64.config` and `libappmap-instrumentation.so` in the same
 directory. Set the environment variables (replace `opt/appmap-dotnet` with the path to the files):
@@ -17,7 +34,7 @@ MicrosoftInstrumentationEngine_FileLogPath=/dev/stderr
 MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=opt/appmap-dotnet/ProductionBreakpoints_x64.config
 ```
 
-For convenience [run](scripts/run.sh) script is provided that sets it all up for the `out` subdirectory, as built
+For convenience [run](scripts/appmap-dotnet) script is provided that sets it all up for the `out` subdirectory, as built
 by `docker-build.sh`. If you're building locally, you can `ln -sf build/libappmap-instrumentation.so out`
 so that the current binary is used.
 
@@ -25,7 +42,7 @@ so that the current binary is used.
 
 Directory `vstest` contains a data collector which, when used together with the instrumentation, enables
 generating individual appmaps for each test case; this works with any test framework integrated with MSTest.
-Runsettings file to set up the collector correctly is included.
+Runsettings file to set up the collector correctly is included and automatically used when running `dotnet appmap test`.
 
 ## Configuration
 

@@ -98,6 +98,8 @@ add_subdirectory(clrie)
 
 if (BUILD_TESTING)
   add_subdirectory(test)
+else()
+  target_compile_definitions(appmap-instrumentation PRIVATE DOCTEST_CONFIG_DISABLE)
 endif()
 
 target_link_libraries(appmap-instrumentation

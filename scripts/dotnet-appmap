@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 find_file() {
     local name="$1"
@@ -8,8 +8,17 @@ find_file() {
     done
     return 1
 }
+runsettings() {
+    # I can't get MSTest to find the library path on its own,
+    # so create a temporary runsettings file with the full path substituted.
 
-BINPATH=$(find_file libappmap-instrumentation.so $(dirname $0) $(dirname $0)/../out)
+    local runs=`mktemp`
+    cat $BINPATH/appmap.runsettings | sed -e s@%PWD%@$BINPATH@ > $runs
+    echo $runs
+}
+
+mydir=$(dirname `readlink -f $0`)
+BINPATH=$(find_file libappmap-instrumentation.so $mydir $mydir/../out)
 
 export CORECLR_ENABLE_PROFILING=${CORECLR_ENABLE_PROFILING:-1}
 export CORECLR_PROFILER=${CORECLR_PROFILER:-{324F817A-7420-4E6D-B3C1-143FBED6D855}}
@@ -19,4 +28,11 @@ export MicrosoftInstrumentationEngine_LogLevel=${MicrosoftInstrumentationEngine_
 export MicrosoftInstrumentationEngine_DisableCodeSignatureValidation=${MicrosoftInstrumentationEngine_DisableCodeSignatureValidation:-1}
 export MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=${MicrosoftInstrumentationEngine_ConfigPath64_TestMethod:-$BINPATH/ProductionBreakpoints_x64.config}
 
-exec "$@"
+if [ "$1" = "test" ]; then
+    shift
+    exec dotnet test -s `runsettings` "$@"
+elif [ -x "`type -p "$1"`" ]; then
+    exec "$@"
+else
+    exec dotnet "$@"
+fi

@@ -6,6 +6,6 @@ dotnet build -o bin
 
 export APPMAP_LIST_MODULES=`mktemp`
 trap "rm $APPMAP_LIST_MODULES" 0
-$BASEDIR/scripts/run.sh $BASEDIR/smoketest/hello/bin/hello
+$BASEDIR/scripts/dotnet-appmap $BASEDIR/smoketest/hello/bin/hello
 cat $APPMAP_LIST_MODULES
 grep -q hello.dll $APPMAP_LIST_MODULES
