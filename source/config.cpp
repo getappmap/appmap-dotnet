@@ -37,24 +37,24 @@ namespace {
         }
     }
 
-    std::optional<fs::path> find_file(const std::string name) {
-        for (fs::path dir = fs::current_path(); dir != dir.root_path(); dir = dir.parent_path()) {
+    std::optional<fs::path> find_file(const std::string name, const fs::path &basepath) {
+        for (fs::path dir = basepath; dir != dir.root_path(); dir = dir.parent_path()) {
             const auto file = dir / name;
             if (fs::exists(file))
                 return file;
         }
 
-        spdlog::warn("no {} found in {}", name, fs::current_path().string());
+        spdlog::warn("no {} found in {}", name, basepath.string());
 
         return std::nullopt;
     }
 
-    std::optional<fs::path> config_file_path() {
+    std::optional<fs::path> config_file_path(const fs::path &basepath) {
         const auto from_env = get_envar("APPMAP_CONFIG");
         if (from_env)
             return from_env;
         else
-            return find_file("appmap.yml");
+            return find_file("appmap.yml", basepath);
     }
 
     void load_config(appmap::config &c, const YAML::Node &config_file) {
@@ -86,6 +86,9 @@ namespace {
         c.module_list_path = get_envar("APPMAP_LIST_MODULES");
         c.appmap_output_path = get_envar("APPMAP_OUTPUT_PATH");
         c.generate_classmap = get_bool_envar("APPMAP_CLASSMAP");
+        const auto basepath = get_envar("APPMAP_BASEPATH");
+        if (basepath)
+            c.base_path = *basepath;
 
         // it's probably not the best place for this, but it'll do
         if (const auto &log_level = get_envar("APPMAP_LOG_LEVEL"))
@@ -93,8 +96,9 @@ namespace {
         else
             spdlog::set_level(spdlog::level::info);
 
-        if (const auto config_path = config_file_path()) {
-            c.base_path = (*config_path).parent_path();
+        if (const auto config_path = config_file_path(basepath.value_or(fs::current_path()))) {
+            if (!basepath)
+                c.base_path = (*config_path).parent_path();
             load_config(c, YAML::LoadFile(*config_path));
         }
 

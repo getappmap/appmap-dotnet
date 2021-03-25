@@ -43,9 +43,15 @@ packages:
 ```
 
 The path to the file can be explicitly set in `APPMAP_CONFIG` environment variable. Otherwise, appmap-dotnet
-searches current directory and all its ancestors for `appmap.yml`.
+searches current directory (or `APPMAP_BASEPATH` if set) and all its ancestors for `appmap.yml`.
+Relative `path` entries are resolved in `APPMAP_BASEPATH` or the directory where `appmap.yml` was found.
 
 ### Environment variables
+
+#### `APPMAP_BASEPATH`
+
+Base path; this is where the search for the config file begins and where relative `path` packages are resolved.
+Defaults to where the config file was found, or the current directory.
 
 #### `APPMAP_CLASSMAP`
 
