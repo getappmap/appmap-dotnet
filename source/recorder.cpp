@@ -48,6 +48,9 @@ void recorder::instrument(clrie::method_info method)
     code.insert_before(first, factory.load_constants(id));
     code.insert_before(first, instr.make_call(&method_called));
 
+    auto srdi = method.single_ret_default_instrumentation();
+    srdi->Initialize(code);
+    com::hresult::check(srdi->ApplySingleRetDefaultInstrumentation());
     // epilogue
     auto last = code.last_instruction();
     bool tail = is_tail(last);
@@ -55,6 +58,6 @@ void recorder::instrument(clrie::method_info method)
         spdlog::warn("Tail call detected in {} -- tail calls aren't fully supported yet, so your appmap might be incorrect.\n\tPlease report at https://github.com/applandinc/appmap-dotnet/issues", method.full_name());
         last = last.get(&IInstruction::GetPreviousInstruction);
     }
-    code.insert_before(last, factory.load_constants(id, tail));
+    code.insert_before_and_retarget_offsets(last, factory.load_constants(id, tail));
     code.insert_before(last, instr.make_call(&method_returned));
 }

@@ -59,7 +59,24 @@ namespace clrie {
 
         // Insert an instruction before another instruction AND update jmp targets and exception ranges that used
         // to point to the old instruction to point to the new instruction.
-        void insert_before_and_retarget_offsets(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new);
+        void insert_before_and_retarget_offsets(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new)
+        {
+            com::hresult::check(ptr_->InsertBeforeAndRetargetOffsets(instruction_orig, instruction_new));
+        }
+
+        template <typename Container>
+        void insert_before_and_retarget_offsets(com::ptr<IInstruction> pos, const Container &&instructions)
+        {
+            bool retargeted = false;
+            for (auto ins : instructions) {
+                if (retargeted)
+                    insert_before(pos, ins);
+                else {
+                    insert_before_and_retarget_offsets(pos, ins);
+                    retargeted = true;
+                }
+            }
+        }
 
         // Replace an instruction with another instruction. The old instruction continues to live in the original graph but is marked replaced
         void replace(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> *p_instruction_new);

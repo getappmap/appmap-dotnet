@@ -91,12 +91,12 @@ namespace appmap {
             } else if (ev.kind == event_kind::ret) {
                 if (stack.empty()) {
                     // known bug
-                    spdlog::debug("stack empty on return, ignoring");
+                    spdlog::warn("stack empty on return, ignoring");
                     continue;
                 }
                 if (stack.back().fid != ev.function) {
                     // known bug
-                    spdlog::debug("function mismatch detected on return; function: {}, stack: {}", ev.function, stack | ranges::views::transform([](auto &ev){ return ev.fid; }));
+                    spdlog::warn("function mismatch detected on return; function: {}, stack: {}", method_infos.at(ev.function).method_id, stack | ranges::views::transform([](auto &ev){ return method_infos.at(ev.fid).method_id; }));
                     if (ranges::any_of(stack, [fid = ev.function](const auto &ev) { return ev.fid == fid; })) {
                         // try to do out best by generating the missing returns
                         while (stack.back().fid != ev.function) {

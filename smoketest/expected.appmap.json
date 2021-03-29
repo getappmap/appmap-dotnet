@@ -5,7 +5,17 @@
         {
           "children": [
             {
+              "name": "Test2",
+              "static": true,
+              "type": "function"
+            },
+            {
               "name": "Main",
+              "static": true,
+              "type": "function"
+            },
+            {
+              "name": "Test",
               "static": true,
               "type": "function"
             }
@@ -27,8 +37,32 @@
       "static": true
     },
     {
-      "event": "return",
+      "defined_class": "hello.Program",
+      "event": "call",
       "id": 2,
+      "method_id": "Test",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 3,
+      "parent_id": 2
+    },
+    {
+      "defined_class": "hello.Program",
+      "event": "call",
+      "id": 4,
+      "method_id": "Test2",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 5,
+      "parent_id": 4
+    },
+    {
+      "event": "return",
+      "id": 6,
       "parent_id": 1
     }
   ]
