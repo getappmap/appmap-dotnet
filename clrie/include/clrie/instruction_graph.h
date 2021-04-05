@@ -47,7 +47,7 @@ namespace clrie {
         }
 
         template <typename Container>
-        void insert_before(com::ptr<IInstruction> pos, const Container &&instructions)
+        void insert_before(com::ptr<IInstruction> pos, const Container &instructions)
         {
             for (auto ins : instructions)
                 insert_before(pos, ins);
@@ -65,7 +65,7 @@ namespace clrie {
         }
 
         template <typename Container>
-        void insert_before_and_retarget_offsets(com::ptr<IInstruction> pos, const Container &&instructions)
+        void insert_before_and_retarget_offsets(com::ptr<IInstruction> pos, const Container &instructions)
         {
             bool retargeted = false;
             for (auto ins : instructions) {

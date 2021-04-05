@@ -46,7 +46,11 @@
     {
       "event": "return",
       "id": 3,
-      "parent_id": 2
+      "parent_id": 2,
+      "return_value": {
+        "class": "I4",
+        "value": 1
+      }
     },
     {
       "defined_class": "hello.Program",

@@ -4,10 +4,12 @@ namespace hello
 {
     class Program
     {
-        static void Test(string? text) {
+        static int Test(string? text) {
             if (text == null) {
                 Console.WriteLine("null test");
+                return 0;
             }
+            return 1;
         }
 
         static void Test2() {
@@ -16,7 +18,7 @@ namespace hello
 
         static void Main(string[] args)
         {
-            Test("text");
+            Console.WriteLine(Test("text"));
             Test2();
             Console.WriteLine("Hello World!");
         }
