@@ -50,13 +50,12 @@ bool appmap::test_framework::instrument(clrie::method_info method)
         return false;
 
     const std::string name = method.full_name();
-    const auto factory = method.instruction_factory();
-    const instrumentation instr{factory, module.meta_data_emit().as<IMetaDataEmit>()};
+    const instrumentation instr(method);
     clrie::instruction_graph code = method.instructions();
     const auto first = code.first_instruction();
 
     if (name == StartCaseName) {
-        code.insert_before(first, factory.create_load_arg_instruction(0));
+        code.insert_before(first, instr.create_load_arg_instruction(0));
         code.insert_before(first, instr.make_call(startCase));
         return true;
     } else if (name == EndCaseName) {

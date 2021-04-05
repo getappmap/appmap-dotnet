@@ -95,7 +95,6 @@ namespace appmap {
                     continue;
                 }
                 if (stack.back().fid != ev.function) {
-                    // known bug
                     spdlog::warn("function mismatch detected on return; function: {}, stack: {}", method_infos.at(ev.function).method_id, stack | ranges::views::transform([](auto &ev){ return method_infos.at(ev.fid).method_id; }));
                     if (ranges::any_of(stack, [fid = ev.function](const auto &ev) { return ev.fid == fid; })) {
                         // try to do out best by generating the missing returns
@@ -108,6 +107,11 @@ namespace appmap {
                     }
                 }
                 jev = { { "event", "return" }, { "parent_id", stack.back().ev } };
+                if (ev.return_value) {
+                    const auto &method = method_infos.at(ev.function);
+                    auto &rv = jev["return_value"] = { { "class", method.return_type } };
+                    std::visit([&rv] (auto &&arg) { rv["value"] = arg; }, *ev.return_value);
+                }
                 stack.pop_back();
             }
             jev["id"] = id++;
@@ -156,11 +160,11 @@ TEST_CASE("basic generation") {
     const appmap::recording events = {
         { event_kind::call, 42 },
         { event_kind::call, 43 },
-        { event_kind::ret, 43 },
-        { event_kind::ret, 42 },
+        { event_kind::ret, 43, { uint64_t{42} } },
+        { event_kind::ret, 42, { int64_t{-31337} } },
     };
-    method_infos[42] = { "Some.Class", "Method", false };
-    method_infos[43] = { "Some.Class", "OtherMethod", true };
+    method_infos[42] = { "Some.Class", "Method", false, "I8" };
+    method_infos[43] = { "Some.Class", "OtherMethod", true, "U4" };
 
     CHECK(json::parse(generate(events, true)) == R"(
         {
@@ -202,12 +206,20 @@ TEST_CASE("basic generation") {
                 {
                     "id": 3,
                     "event": "return",
-                    "parent_id": 2
+                    "parent_id": 2,
+                    "return_value": {
+                        "class": "U4",
+                        "value": 42
+                    }
                 },
                 {
                     "id": 4,
                     "event": "return",
-                    "parent_id": 1
+                    "parent_id": 1,
+                    "return_value": {
+                        "class": "I8",
+                        "value": -31337
+                    }
                 }
             ]
         })"_json);

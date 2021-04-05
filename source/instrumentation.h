@@ -1,7 +1,9 @@
 #pragma once
 #include <array>
+#include <variant>
 #include <gsl/gsl-lite.hpp>
 
+#include <clrie/method_info.h>
 #include <clrie/instruction_factory.h>
 
 #include <corhdr.h>
@@ -17,10 +19,19 @@ namespace {
     constexpr COR_SIGNATURE type_signature<int32_t> = ELEMENT_TYPE_I4;
 
     template <>
+    constexpr COR_SIGNATURE type_signature<int64_t> = ELEMENT_TYPE_I8;
+
+    template <>
     constexpr COR_SIGNATURE type_signature<uint32_t> = ELEMENT_TYPE_U4;
 
     template <>
+    constexpr COR_SIGNATURE type_signature<uint64_t> = ELEMENT_TYPE_U8;
+
+    template <>
     constexpr COR_SIGNATURE type_signature<char *> = ELEMENT_TYPE_STRING;
+
+    template <>
+    constexpr COR_SIGNATURE type_signature<const char *> = ELEMENT_TYPE_STRING;
 
     static_assert(sizeof(void *) == 8);
     template <typename T>
@@ -60,12 +71,15 @@ namespace {
 }
 
 namespace appmap {
-    struct instrumentation {
-        mutable clrie::instruction_factory factory;
-        mutable com::ptr<IMetaDataEmit> metadata;
+    struct instrumentation : public clrie::instruction_factory {
+        instrumentation(clrie::method_info method_info) :
+            clrie::instruction_factory(method_info.instruction_factory()),
+            method(method_info),
+            metadata(method.module_info().meta_data_emit().as<IMetaDataEmit>())
+        {}
 
-        using instruction = com::ptr<IInstruction>;
-        using instruction_sequence = std::vector<instruction>;
+        mutable clrie::method_info method;
+        mutable com::ptr<IMetaDataEmit> metadata;
 
         template <class F>
         instruction_sequence make_call(F f) const {

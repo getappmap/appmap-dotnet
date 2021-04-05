@@ -9,7 +9,7 @@ appmap::instrumentation::instruction_sequence appmap::instrumentation::make_call
     mdToken token;
     com::hresult::check(metadata->GetTokenFromSig(signature.data(), signature.size(), &token));
     return {
-        factory.create_long_operand_instruction(Cee_Ldc_I8, reinterpret_cast<int64_t>(fn)),
-        factory.create_token_operand_instruction(Cee_Calli, token)
+        create_long_operand_instruction(Cee_Ldc_I8, reinterpret_cast<int64_t>(fn)),
+        create_token_operand_instruction(Cee_Calli, token)
     };
 }
