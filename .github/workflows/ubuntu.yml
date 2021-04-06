@@ -26,14 +26,14 @@ jobs:
       - name: configure
         run: cmake -Bbuild -DCMAKE_BUILD_TYPE=RelWithDebInfo
         env:
-          CC: gcc-8
-          CXX: g++-8
+          CC: gcc-9
+          CXX: g++-9
 
       - name: build
         run: cmake --build build -j4
         env:
-          CC: gcc-8
-          CXX: g++-8
+          CC: gcc-9
+          CXX: g++-9
 
       - name: test
         run: build/test/appmap-test
