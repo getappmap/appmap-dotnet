@@ -16,8 +16,9 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manag
 
 void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
 {
-    spdlog::trace("on_module_loaded({})", module.module_name());
-    modules.insert(module.module_name());
+    const auto name = module.module_name();
+    spdlog::debug("on_module_loaded({})", name);
+    modules.insert(name);
 }
 
 void appmap::instrumentation_method::on_shutdown()
@@ -55,6 +56,7 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
         return;
 
     recorder::instrument(method);
+    spdlog::trace("instrument_method({}, {}) finished", method.full_name(), is_rejit);
 }
 
 // This creates a test registry so that a build with tests enabled

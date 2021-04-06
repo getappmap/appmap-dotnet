@@ -4,16 +4,17 @@ namespace hello
 {
     class Program
     {
-        static int Test(string? text) {
+        static string Test(string? text) {
             if (text == null) {
                 Console.WriteLine("null test");
-                return 0;
+                return "Foo";
             }
-            return 1;
+            return "Bar";
         }
 
         static void Test2() {
             Console.WriteLine("test2");
+            Console.WriteLine("test2".ToString());
         }
 
         static void Main(string[] args)

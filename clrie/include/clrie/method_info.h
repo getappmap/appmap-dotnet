@@ -9,12 +9,6 @@
 #include "clrie/module_info.h"
 #undef __valid // microsoft can't into C++ -- __ names are reserved
 
-template<>
-constexpr GUID com::guid_of<IMetaDataEmit>() noexcept {
-    using namespace com::literals;
-    return "{BA3FEE4C-ECB9-4e41-83B7-183FA41CD859}"_guid;
-}
-
 namespace clrie {
     struct method_info : public com::ptr<IMethodInfo> {
         method_info(IMethodInfo *info = nullptr) noexcept : com::ptr<IMethodInfo>(info) {}
