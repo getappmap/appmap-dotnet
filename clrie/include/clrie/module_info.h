@@ -4,6 +4,24 @@
 #include "com/ptr.h"
 #include <cor.h>
 
+template<>
+constexpr GUID com::guid_of<IMetaDataEmit>() noexcept {
+    using namespace com::literals;
+    return "{BA3FEE4C-ECB9-4e41-83B7-183FA41CD859}"_guid;
+}
+
+template<>
+constexpr GUID com::guid_of<IMetaDataImport>() noexcept {
+    using namespace com::literals;
+    return "{7DAC8207-D3AE-4c75-9B67-92801A497D44}"_guid;
+}
+
+template<>
+constexpr GUID com::guid_of<IMetaDataAssemblyImport>() noexcept {
+    using namespace com::literals;
+    return "{EE62470B-E94B-424e-9B7C-2F00C9249F93}"_guid;
+}
+
 namespace clrie {
     struct module_info : public com::ptr<IModuleInfo>
     {
@@ -26,17 +44,17 @@ namespace clrie {
             return get(&interface_type::GetAppDomainInfo);
         }
 
-        com::ptr<IUnknown> meta_data_import() {
-            return get(&interface_type::GetMetaDataImport);
+        com::ptr<IMetaDataImport> meta_data_import() {
+            return get(&interface_type::GetMetaDataImport).as<IMetaDataImport>();
         }
-        com::ptr<IUnknown> meta_data_assembly_import() {
-            return get(&interface_type::GetMetaDataAssemblyImport);
+        com::ptr<IMetaDataAssemblyImport> meta_data_assembly_import() {
+            return get(&interface_type::GetMetaDataAssemblyImport).as<IMetaDataAssemblyImport>();
         }
 
         // NOTE: It is expected that these fail for winmd files which do not support
         // metadata emit.
-        com::ptr<IUnknown> meta_data_emit() {
-            return get(&interface_type::GetMetaDataEmit);
+        com::ptr<IMetaDataEmit> meta_data_emit() {
+            return get(&interface_type::GetMetaDataEmit).as<IMetaDataEmit>();
         }
         com::ptr<IUnknown> meta_data_assembly_emit() {
             return get(&interface_type::GetMetaDataAssemblyEmit);

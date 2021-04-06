@@ -1,11 +1,12 @@
 #pragma once
 #include <optional>
+#include <string>
 #include <variant>
 
 #include <corprof.h>
 
 namespace appmap {
-    using cor_value = std::variant<uint64_t, int64_t, bool>;
+    using cor_value = std::variant<std::string, uint64_t, int64_t, bool>;
 
     enum class event_kind {
         call, ret

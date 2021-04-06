@@ -75,16 +75,22 @@ namespace appmap {
         instrumentation(clrie::method_info method_info) :
             clrie::instruction_factory(method_info.instruction_factory()),
             method(method_info),
-            metadata(method.module_info().meta_data_emit().as<IMetaDataEmit>())
+            module(method.module_info()),
+            module_id(module.module_id()),
+            metadata(module.meta_data_emit())
         {}
 
         mutable clrie::method_info method;
+        mutable clrie::module_info module;
+        const ModuleID module_id;
         mutable com::ptr<IMetaDataEmit> metadata;
 
         template <class F>
         instruction_sequence make_call(F f) const {
             return make_call_sig(reinterpret_cast<void *>(f), gsl::make_span(func_traits<F>::signature));
         }
+
+        instruction create_call_to_string() const;
 
     protected:
         instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;

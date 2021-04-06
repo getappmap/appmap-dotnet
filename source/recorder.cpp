@@ -32,31 +32,57 @@ namespace {
         recorder::events.push_back({event_kind::ret, id, return_value});
     }
 
-    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, com::ptr<IType> return_type)
+    template <>
+    void method_returned<const char *>(const char *return_value, FunctionID id)
     {
-        switch (return_type.get<CorElementType>(&IType::GetCorElementType)) {
+        std::lock_guard lock(appmap::recorder::mutex);
+        recorder::events.push_back({event_kind::ret, id, std::string(return_value)});
+    }
+
+    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, FunctionID id, com::ptr<IType> return_type)
+    {
+        const auto cor_type = return_type.get<CorElementType>(&IType::GetCorElementType);
+
+        clrie::instruction_factory::instruction_sequence seq;
+        if (cor_type != ELEMENT_TYPE_VOID)
+            seq += instr.create_instruction(Cee_Dup);
+
+        seq += instr.load_constants(id);
+
+        switch (cor_type) {
             case ELEMENT_TYPE_VOID:
-                return instr.make_call(method_returned_void);
+                seq += instr.make_call(method_returned_void);
+                break;
 
             case ELEMENT_TYPE_I1:
             case ELEMENT_TYPE_I2:
             case ELEMENT_TYPE_I4:
             case ELEMENT_TYPE_I8:
-                return instr.make_call(method_returned<int64_t>);
+                seq += instr.make_call(method_returned<int64_t>);
+                break;
 
             case ELEMENT_TYPE_BOOLEAN:
-                return instr.make_call(method_returned<bool>);
+                seq += instr.make_call(method_returned<bool>);
+                break;
 
             default:
                 spdlog::warn("capturing values of type {} unimplemented", std::string(return_type.get(&IType::GetName)));
+                seq.insert(seq.begin() + 1, instr.create_call_to_string());
                 [[fallthrough]];
+
+            case ELEMENT_TYPE_STRING:
+                seq += instr.make_call(method_returned<const char *>);
+                break;
 
             case ELEMENT_TYPE_U1:
             case ELEMENT_TYPE_U2:
             case ELEMENT_TYPE_U4:
             case ELEMENT_TYPE_U8:
-                return instr.make_call(method_returned<uint64_t>);
+                seq += instr.make_call(method_returned<uint64_t>);
+                break;
         }
+
+        return seq;
     }
 
     bool is_tail(com::ptr<IInstruction> inst) {
@@ -100,14 +126,5 @@ void recorder::instrument(clrie::method_info method)
         last = last.get(&IInstruction::GetPreviousInstruction);
     }
 
-    clrie::instruction_factory::instruction_sequence epilogue;
-
-    if (return_type.get<CorElementType>(&IType::GetCorElementType) != ELEMENT_TYPE_VOID) {
-        epilogue += instr.create_instruction(Cee_Dup);
-    }
-
-    epilogue += instr.load_constants(id);
-    epilogue += make_return(instr, return_type);
-
-    code.insert_before_and_retarget_offsets(last, epilogue);
+    code.insert_before_and_retarget_offsets(last, make_return(instr, id, return_type));
 }

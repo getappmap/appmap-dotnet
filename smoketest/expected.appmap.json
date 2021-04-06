@@ -48,8 +48,8 @@
       "id": 3,
       "parent_id": 2,
       "return_value": {
-        "class": "I4",
-        "value": 1
+        "class": "STRING",
+        "value": "Bar"
       }
     },
     {
