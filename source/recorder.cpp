@@ -1,3 +1,4 @@
+#include <doctest/doctest.h>
 #include <range/v3/algorithm/move.hpp>
 #include <spdlog/spdlog.h>
 
@@ -36,7 +37,24 @@ namespace {
     void method_returned<const char *>(const char *return_value, FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        recorder::events.push_back({event_kind::ret, id, std::string(return_value)});
+        if (return_value == nullptr)
+            recorder::events.push_back({event_kind::ret, id, nullptr});
+        else
+            recorder::events.push_back({event_kind::ret, id, std::string(return_value)});
+    }
+
+    TEST_CASE("method_returned()")
+    {
+        recorder::events.clear();
+        SUBCASE("with a string argument") {
+            method_returned("hello", 42);
+            CHECK(recorder::events.back() == event{event_kind::ret, 42, std::string("hello")});
+        }
+
+        SUBCASE("with nullptr") {
+            method_returned(nullptr, 42);
+            CHECK(recorder::events.back() == event{event_kind::ret, 42, nullptr});
+        }
     }
 
     clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, FunctionID id, com::ptr<IType> return_type)
