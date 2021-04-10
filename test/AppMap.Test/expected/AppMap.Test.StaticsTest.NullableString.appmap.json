@@ -1,0 +1,36 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.Statics",
+      "event": "call",
+      "id": 1,
+      "method_id": "NullableString",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1,
+      "return_value": {
+        "class": "STRING",
+        "value": "test"
+      }
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Statics",
+      "event": "call",
+      "id": 3,
+      "method_id": "NullableString",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 4,
+      "parent_id": 3,
+      "return_value": {
+        "class": "STRING",
+        "value": null
+      }
+    }
+  ]
+}
