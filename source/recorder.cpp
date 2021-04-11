@@ -17,12 +17,20 @@ namespace {
     void method_called(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
+        if (spdlog::get_level() >= spdlog::level::trace) {
+            const auto &method_info = method_infos.at(id);
+            spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
+        }
         recorder::events.push_back({event_kind::call, id});
     }
 
     void method_returned_void(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
+        if (spdlog::get_level() >= spdlog::level::trace) {
+            const auto &method_info = method_infos.at(id);
+            spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
+        }
         recorder::events.push_back({event_kind::ret, id});
     }
 
@@ -30,6 +38,10 @@ namespace {
     void method_returned(T return_value, FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
+        if (spdlog::get_level() >= spdlog::level::trace) {
+            const auto &method_info = method_infos.at(id);
+            spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
+        }
         recorder::events.push_back({event_kind::ret, id, return_value});
     }
 
@@ -37,6 +49,13 @@ namespace {
     void method_returned<const char *>(const char *return_value, FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
+        if (spdlog::get_level() >= spdlog::level::trace) {
+            const auto &method_info = method_infos.at(id);
+            if (return_value == nullptr)
+                spdlog::trace("{}({}, {}.{})", __FUNCTION__, "null", method_info.defined_class, method_info.method_id);
+            else
+                spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
+        }
         if (return_value == nullptr)
             recorder::events.push_back({event_kind::ret, id, nullptr});
         else
@@ -52,11 +71,12 @@ namespace {
         }
 
         SUBCASE("with nullptr") {
-            method_returned(nullptr, 42);
+            method_returned<const char *>(nullptr, 42);
             CHECK(recorder::events.back() == event{event_kind::ret, 42, nullptr});
         }
     }
 
+    [[maybe_unused]]
     clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, FunctionID id, com::ptr<IType> return_type)
     {
         const auto cor_type = return_type.get<CorElementType>(&IType::GetCorElementType);
@@ -84,8 +104,11 @@ namespace {
                 break;
 
             default:
-                spdlog::warn("capturing values of type {} unimplemented", std::string(return_type.get(&IType::GetName)));
-                seq.insert(seq.begin() + 1, instr.create_call_to_string());
+                {
+                    spdlog::debug("capturing values of type {} unimplemented", std::string(return_type.get(&IType::GetName)));
+                    auto to_string = instr.create_call_to_string(return_type);
+                    seq.insert(seq.begin() + 1, to_string.begin(), to_string.end());
+                }
                 [[fallthrough]];
 
             case ELEMENT_TYPE_STRING:

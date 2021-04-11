@@ -12,12 +12,13 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manag
 {
     spdlog::debug("initialize()");
     profiler_manager = manager;
+    instrumentation::signature_builder = manager.get(&IProfilerManager::CreateSignatureBuilder);
 }
 
 void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
 {
     const auto name = module.module_name();
-    spdlog::debug("on_module_loaded({})", name);
+    // spdlog::debug("on_module_loaded({})", name);
     modules.insert(name);
 }
 
@@ -43,12 +44,12 @@ bool appmap::instrumentation_method::should_instrument_method(clrie::method_info
         return test_framework.should_instrument(method) || config.should_instrument(method);
     }();
 
-    spdlog::trace("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
+    // spdlog::trace("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
 
     return result;
 }
 
-void appmap::instrumentation_method::instrument_method(clrie::method_info method, bool is_rejit)
+void appmap::instrumentation_method::instrument_method(clrie::method_info method, [[maybe_unused]] bool is_rejit)
 {
     spdlog::trace("instrument_method({}, {})", method.full_name(), is_rejit);
 
