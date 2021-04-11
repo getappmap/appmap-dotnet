@@ -85,12 +85,14 @@ namespace appmap {
         const ModuleID module_id;
         mutable com::ptr<IMetaDataEmit> metadata;
 
+        static com::ptr<ISignatureBuilder> signature_builder;
+
         template <class F>
         instruction_sequence make_call(F f) const {
             return make_call_sig(reinterpret_cast<void *>(f), gsl::make_span(func_traits<F>::signature));
         }
 
-        instruction create_call_to_string() const;
+        instruction_sequence create_call_to_string(com::ptr<IType> type) const noexcept;
 
     protected:
         instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;

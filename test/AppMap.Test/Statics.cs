@@ -11,6 +11,13 @@ namespace AppMap.Test
                 else
                     return null;
             }
+
+            public static Guid? NullableGuid(bool giveValue) {
+                if (giveValue)
+                    return Guid.Empty;
+                else
+                    return null;
+            }
         }
     }
 
@@ -21,6 +28,13 @@ namespace AppMap.Test
         {
             Console.WriteLine(Code.Statics.NullableString(true));
             Console.WriteLine(Code.Statics.NullableString(false));
+        }
+
+        [Fact]
+        public void NullableGuid()
+        {
+            Console.WriteLine(Code.Statics.NullableGuid(true));
+            Console.WriteLine(Code.Statics.NullableGuid(false));
         }
     }
 }
