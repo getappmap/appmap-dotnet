@@ -1,0 +1,60 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 1,
+      "method_id": ".ctor",
+      "static": false
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 3,
+      "method_id": "get_Uri",
+      "static": false
+    },
+    {
+      "event": "return",
+      "id": 4,
+      "parent_id": 3,
+      "return_value": {
+        "class": "System.Uri",
+        "value": null
+      }
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 5,
+      "method_id": "set_Uri",
+      "static": false
+    },
+    {
+      "event": "return",
+      "id": 6,
+      "parent_id": 5
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 7,
+      "method_id": "get_Uri",
+      "static": false
+    },
+    {
+      "event": "return",
+      "id": 8,
+      "parent_id": 7,
+      "return_value": {
+        "class": "System.Uri",
+        "value": "http://appmap.test/"
+      }
+    }
+  ]
+}

@@ -29,7 +29,7 @@
       "parent_id": 3,
       "return_value": {
         "class": "GENERICINST",
-        "value": ""
+        "value": null
       }
     }
   ]

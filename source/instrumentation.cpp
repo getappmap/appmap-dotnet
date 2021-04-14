@@ -50,6 +50,15 @@ namespace {
 
         return mdAssemblyRefNil;
     }
+
+    std::vector<COR_SIGNATURE> signature_of_type(com::ptr<IType> type)
+    {
+        auto &builder = instrumentation::signature_builder;
+        com::hresult::check(builder->Clear());
+        com::hresult::check(type->AddToSignature(builder));
+        const COR_SIGNATURE *signature = builder.get<const COR_SIGNATURE *>(&ISignatureBuilder::GetCorSignaturePtr);
+        return std::vector<COR_SIGNATURE>(signature, signature + builder.get(&ISignatureBuilder::GetSize));
+    }
 }
 
 clrie::instruction_factory::instruction_sequence appmap::instrumentation::create_call_to_string(com::ptr<IType> type) const noexcept
@@ -58,17 +67,14 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     mdTypeSpec type_token;
 
+    const auto signature = signature_of_type(type);
+
+    spdlog::trace("return type signature: {}", signature);
+
     try {
         type_token = type.as<ITokenType>().get(&ITokenType::GetToken);
     } catch (const std::system_error &) {
-        // not a token type, we have to generate a signature and emit metadata token
-        com::hresult::check(signature_builder->Clear());
-        com::hresult::check(type->AddToSignature(signature_builder));
-        type_token = metadata.get<mdTypeSpec>(
-            &IMetaDataEmit::GetTokenFromTypeSpec,
-            signature_builder.get<const COR_SIGNATURE *>(&ISignatureBuilder::GetCorSignaturePtr),
-            signature_builder.get(&ISignatureBuilder::GetSize)
-        );
+        type_token = metadata.get<mdTypeSpec>(&IMetaDataEmit::GetTokenFromTypeSpec, signature.data(), signature.size());
     }
 
     if (object_to_string_refs.find(module_id) == object_to_string_refs.end()) {
@@ -79,13 +85,23 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
         object_to_string_refs[module_id] = metadata.get<mdMemberRef>(&IMetaDataEmit::DefineMemberRef, system_object, u"ToString", to_string_sig, sizeof(to_string_sig));
     }
 
-    com::ptr<ILocalVariableCollection> local_variables = method.get(&IMethodInfo::GetLocalVariables);
-    DWORD local = local_variables.get<DWORD>(&ILocalVariableCollection::AddLocal, type);
+    const bool is_ref = signature[0] == ELEMENT_TYPE_CLASS
+        || (signature[0] == ELEMENT_TYPE_GENERICINST && signature[1] == ELEMENT_TYPE_CLASS);
 
-    return {
-        create_store_local_instruction(local),
-        create_load_local_address_instruction(local),
-        create_token_operand_instruction(Cee_Constrained, type_token),
-        create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id])
+    instruction_sequence result;
+
+    if (!is_ref)
+        result += create_token_operand_instruction(Cee_Box, type_token);
+
+    auto end = create_instruction(Cee_Nop); // just to have a place to branch to
+
+    result += {
+        create_instruction(Cee_Dup),
+        create_instruction(Cee_Ldnull),
+        create_branch_instruction(Cee_Beq_S, end),
+        create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id]),
+        end
     };
+
+    return result;
 }
