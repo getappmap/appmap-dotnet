@@ -4,7 +4,7 @@ using Xunit;
 namespace AppMap.Test
 {
     namespace Code {
-        public class Statics {
+        public class Values {
             public static string? NullableString(bool giveValue) {
                 if (giveValue)
                     return "test";
@@ -21,20 +21,20 @@ namespace AppMap.Test
         }
     }
 
-    public class StaticsTest
+    public class ValuesTest
     {
         [Fact]
         public void NullableString()
         {
-            Console.WriteLine(Code.Statics.NullableString(true));
-            Console.WriteLine(Code.Statics.NullableString(false));
+            Console.WriteLine(Code.Values.NullableString(true));
+            Console.WriteLine(Code.Values.NullableString(false));
         }
 
         [Fact]
         public void NullableGuid()
         {
-            Console.WriteLine(Code.Statics.NullableGuid(true));
-            Console.WriteLine(Code.Statics.NullableGuid(false));
+            Console.WriteLine(Code.Values.NullableGuid(true));
+            Console.WriteLine(Code.Values.NullableGuid(false));
         }
     }
 }

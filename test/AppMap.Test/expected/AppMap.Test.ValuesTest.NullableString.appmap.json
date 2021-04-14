@@ -1,7 +1,7 @@
 {
   "events": [
     {
-      "defined_class": "AppMap.Test.Code.Statics",
+      "defined_class": "AppMap.Test.Code.Values",
       "event": "call",
       "id": 1,
       "method_id": "NullableString",
@@ -17,7 +17,7 @@
       }
     },
     {
-      "defined_class": "AppMap.Test.Code.Statics",
+      "defined_class": "AppMap.Test.Code.Values",
       "event": "call",
       "id": 3,
       "method_id": "NullableString",
