@@ -18,6 +18,8 @@ namespace AppMap.Test
                 else
                     return null;
             }
+
+            public Uri? Uri { get; set; }
         }
     }
 
@@ -35,6 +37,15 @@ namespace AppMap.Test
         {
             Console.WriteLine(Code.Values.NullableGuid(true));
             Console.WriteLine(Code.Values.NullableGuid(false));
+        }
+
+        [Fact]
+        public void NullableUri()
+        {
+            var v = new Code.Values();
+            Console.WriteLine(v.Uri);
+            v.Uri = new Uri("http://appmap.test");
+            Console.WriteLine(v.Uri);
         }
     }
 }
