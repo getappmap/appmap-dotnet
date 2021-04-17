@@ -22,6 +22,10 @@ namespace appmap {
         static config &instance();
         bool should_instrument(clrie::method_info method);
 
+        std::unique_ptr<std::ostream> module_list_stream() const;
+        std::unique_ptr<std::ostream> appmap_output_stream() const;
+        std::pair<std::unique_ptr<std::ostream>, std::filesystem::path> appmap_output_stream(const std::string &name) const;
+
     private:
         mutable std::optional<std::filesystem::path> output_dir;
     };
