@@ -28,12 +28,10 @@ namespace {
 
     void endCase() {
         const config &c = appmap::config::instance();
+        auto [stream, path] = c.appmap_output_stream(case_name);
         std::lock_guard lock(appmap::recorder::mutex);
-        const auto base_path = c.appmap_output_dir();
-        fs::create_directories(base_path);
-        const auto outpath = base_path / (case_name + ".appmap.json");
-        std::ofstream(outpath) << generate(appmap::recorder::events, c.generate_classmap) << std::endl;
-        spdlog::info("Wrote {}", outpath.string());
+        *stream << generate(appmap::recorder::events, c.generate_classmap) << std::endl;
+        spdlog::info("Wrote {}", path.string());
     }
 }
 

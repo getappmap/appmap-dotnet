@@ -25,14 +25,13 @@ void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
 void appmap::instrumentation_method::on_shutdown()
 {
     spdlog::debug("on_shutdown()");
-    if (config.module_list_path) {
-        std::ofstream f(*config.module_list_path, std::ios_base::app);
+    if (auto f = config.module_list_stream()) {
         for (const auto &mod : modules) {
-            f << mod << '\n';
+            *f << mod << '\n';
         }
     }
-    if (config.appmap_output_path) {
-        std::ofstream(*config.appmap_output_path) << appmap::generate(recorder::events, config.generate_classmap);
+    if (auto f = config.appmap_output_stream()) {
+        *f << appmap::generate(recorder::events, config.generate_classmap) << std::endl;
     }
 }
 

@@ -4,6 +4,7 @@
 #include <yaml-cpp/yaml.h>
 #include <utf8.h>
 #include <spdlog/fmt/bundled/ostream.h>
+#include <fstream>
 
 #include "config.h"
 
@@ -114,6 +115,25 @@ namespace {
             res = res.parent_path();
         return res;
     }
+
+    std::string sanitize_filename(const std::string &name)
+    {
+        std::string result = name;
+        for (char &c : result) {
+            if (c == '/' || c == fs::path::preferred_separator)
+                c = '-';
+        }
+        return result;
+    }
+
+    std::unique_ptr<std::ostream> output_file(const std::filesystem::path &path, std::ios_base::openmode mode = std::ios_base::out)
+    {
+        auto f = std::make_unique<std::ofstream>();
+        if (f->rdbuf()->open(path, mode) == nullptr)
+            throw std::runtime_error(std::string("error opening file ") + path.string());
+        f->exceptions(std::ios::failbit | std::ios::badbit);
+        return f;
+    }
 }
 
 appmap::config & appmap::config::instance()
@@ -155,10 +175,32 @@ bool appmap::config::should_instrument(clrie::method_info method)
 
 std::filesystem::path appmap::config::appmap_output_dir() const noexcept
 {
-    if (!output_dir)
+    if (!output_dir) {
         output_dir = get_envar("APPMAP_OUTPUT_DIR").value_or(base_path / "tmp" / "appmap");
+        fs::create_directories(*output_dir);
+    }
 
     return *output_dir;
+}
+
+std::unique_ptr<std::ostream> appmap::config::appmap_output_stream() const
+{
+    if (!appmap_output_path) return {};
+
+    return output_file(*appmap_output_path);
+}
+
+std::unique_ptr<std::ostream> appmap::config::module_list_stream() const
+{
+    if (!module_list_path) return {};
+
+    return output_file(*module_list_path);
+}
+
+std::pair<std::unique_ptr<std::ostream>, std::filesystem::path> appmap::config::appmap_output_stream(const std::string& name) const
+{
+    const auto outpath = appmap_output_dir() / (sanitize_filename(name) + ".appmap.json");
+    return { output_file(outpath), outpath };
 }
 
 #ifndef DOCTEST_CONFIG_DISABLE
