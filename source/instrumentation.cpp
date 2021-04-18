@@ -85,23 +85,41 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
         object_to_string_refs[module_id] = metadata.get<mdMemberRef>(&IMetaDataEmit::DefineMemberRef, system_object, u"ToString", to_string_sig, sizeof(to_string_sig));
     }
 
+    instruction_sequence result;
+
     const bool is_ref = signature[0] == ELEMENT_TYPE_CLASS
         || (signature[0] == ELEMENT_TYPE_GENERICINST && signature[1] == ELEMENT_TYPE_CLASS);
 
-    instruction_sequence result;
-
-    if (!is_ref)
-        result += create_token_operand_instruction(Cee_Box, type_token);
+    const bool is_nullable = !is_ref && [&type, &signature]() {
+        if (signature[0] != ELEMENT_TYPE_GENERICINST) return false;
+        auto rel_type = type.as<ICompositeType>().get(&ICompositeType::GetRelatedType);
+        return std::string(rel_type.get(&IType::GetName)) == "System.Nullable`1";
+    }();
 
     auto end = create_instruction(Cee_Nop); // just to have a place to branch to
 
-    result += {
-        create_instruction(Cee_Dup),
-        create_instruction(Cee_Ldnull),
-        create_branch_instruction(Cee_Beq_S, end),
-        create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id]),
-        end
-    };
+    if (is_nullable || is_ref) { // add check for null
+        if (is_nullable) // boxing a Nullable will automatically pull the null ref
+            result += create_token_operand_instruction(Cee_Box, type_token);
+        result += {
+            create_instruction(Cee_Dup),
+            create_instruction(Cee_Ldnull),
+            create_branch_instruction(Cee_Beq_S, end),
+        };
+    } else {
+        auto locals = method.get(&IMethodInfo::GetLocalVariables);
+        auto local = locals.get<DWORD>(&ILocalVariableCollection::AddLocal, type);
+        result += {
+            create_store_local_instruction(local),
+            create_load_local_address_instruction(local),
+            create_token_operand_instruction(Cee_Constrained, type_token)
+        };
+    }
+
+    result += create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id]);
+
+    if (is_nullable || is_ref)
+        result += end;
 
     return result;
 }

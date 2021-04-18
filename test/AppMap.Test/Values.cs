@@ -20,6 +20,10 @@ namespace AppMap.Test
             }
 
             public Uri? Uri { get; set; }
+
+            public static Span<byte> Span() {
+                return new Span<byte>(new byte[4]);
+            }
         }
     }
 
@@ -46,6 +50,12 @@ namespace AppMap.Test
             Console.WriteLine(v.Uri);
             v.Uri = new Uri("http://appmap.test");
             Console.WriteLine(v.Uri);
+        }
+
+        [Fact]
+        public void Span()
+        {
+            Console.WriteLine(Code.Values.Span().ToString());
         }
     }
 }

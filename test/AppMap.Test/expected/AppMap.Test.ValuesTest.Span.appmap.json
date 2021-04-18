@@ -1,0 +1,20 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 1,
+      "method_id": "Span",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1,
+      "return_value": {
+        "class": "GENERICINST",
+        "value": "System.Span<Byte>[4]"
+      }
+    }
+  ]
+}
