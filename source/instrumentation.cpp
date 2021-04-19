@@ -96,10 +96,12 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
         return std::string(rel_type.get(&IType::GetName)) == "System.Nullable`1";
     }();
 
+    const bool is_mvar = signature[0] == ELEMENT_TYPE_MVAR;
+
     auto end = create_instruction(Cee_Nop); // just to have a place to branch to
 
-    if (is_nullable || is_ref) { // add check for null
-        if (is_nullable) // boxing a Nullable will automatically pull the null ref
+    if (is_nullable || is_ref || is_mvar) { // add check for null
+        if (!is_ref) // boxing a Nullable will automatically pull the null ref
             result += create_token_operand_instruction(Cee_Box, type_token);
         result += {
             create_instruction(Cee_Dup),
@@ -118,7 +120,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     result += create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id]);
 
-    if (is_nullable || is_ref)
+    if (is_nullable || is_ref || is_mvar)
         result += end;
 
     return result;

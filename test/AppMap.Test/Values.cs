@@ -24,6 +24,10 @@ namespace AppMap.Test
             public static Span<byte> Span() {
                 return new Span<byte>(new byte[4]);
             }
+
+            public static T? Generic<T>(T? v) {
+                return v;
+            }
         }
     }
 
@@ -56,6 +60,14 @@ namespace AppMap.Test
         public void Span()
         {
             Console.WriteLine(Code.Values.Span().ToString());
+        }
+
+        [Fact]
+        public void Generic()
+        {
+            Console.WriteLine(Code.Values.Generic("testing"));
+            Console.WriteLine(Code.Values.Generic<string>(null));
+            Console.WriteLine(Code.Values.Generic(Guid.Empty));
         }
     }
 }
