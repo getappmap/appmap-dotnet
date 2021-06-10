@@ -90,7 +90,7 @@ set_target_properties(appmap-instrumentation PROPERTIES CXX_STANDARD 20)
 
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(appmap-instrumentation PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
-target_compile_options(appmap-instrumentation PRIVATE -Wno-pmf-conversions)
+target_compile_options(appmap-instrumentation PRIVATE -Wno-pmf-conversions -fconcepts)
 
 add_subdirectory(pal)
 add_subdirectory(com)

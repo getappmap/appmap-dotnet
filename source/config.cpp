@@ -211,7 +211,7 @@ REGISTER_EXCEPTION_TRANSLATOR(fakeit::FakeitException &ex) {
     return ex.what().c_str();
 }
 
-template<typename... Ts>
+template <typename... Ts>
 struct select_last
 {
     template<typename T>
@@ -232,13 +232,7 @@ struct ComMock : public Mock<C>
         Method((*this), QueryInterface) = &this->get();
     }
 
-    template<int id, typename R, typename T, typename... arglist, class = typename std::enable_if<
-            !std::is_void<R>::value && !std::is_same_v<R, HRESULT> && std::is_base_of<T, C>::value>::type>
-    MockingContext<R, arglist...> stub(R(T::*vMethod)(arglist...)) {
-        return this->Mock<C>::template stub<id>(vMethod);
-    }
-
-    template<typename... arglist>
+    template <typename... arglist>
     struct ComMockingContext : public MockingContext<HRESULT, arglist...>
     {
         ComMockingContext(MockingContext<HRESULT, arglist...> &&mc)
@@ -254,10 +248,9 @@ struct ComMock : public Mock<C>
             MethodMockingContext<HRESULT, arglist...>::setMethodBodyByAssignment(method);
         }
 
-        template <class = std::enable_if<std::is_same_v<result_type, BSTR>>>
         void operator=(const char *r) {
-            auto method = [r](auto &&...args) {
-                *std::get<sizeof...(arglist) - 1>(std::make_tuple(args...)) = SysAllocString(utf8::utf8to16(r).data());
+            auto method = [str = utf8::utf8to16(r)](auto &&...args) {
+                *std::get<sizeof...(arglist) - 1>(std::make_tuple(args...)) = SysAllocString(str.data());
                 return S_OK;
             };
             MethodMockingContext<HRESULT, arglist...>::setMethodBodyByAssignment(method);
@@ -269,8 +262,14 @@ struct ComMock : public Mock<C>
         }
     };
 
-    template<int id, typename T, typename... arglist, class = typename std::enable_if<
-            std::is_base_of<T, C>::value && std::is_pointer_v<typename select_last<arglist...>::type>>::type>
+    template <int id, typename R, typename T, typename... arglist>
+    requires std::is_base_of_v<T, C>
+    MockingContext<R, arglist...> stub(R(T::*vMethod)(arglist...)) {
+        return this->Mock<C>::template stub<id>(vMethod);
+    }
+
+    template <int id, typename T, typename... arglist>
+    requires std::is_base_of_v<T, C> && std::is_pointer_v<typename select_last<arglist...>::type>
     ComMockingContext<arglist...> stub(HRESULT(T::*vMethod)(arglist...)) {
         return this->Mock<C>::template stub<id>(vMethod);
     }
@@ -293,7 +292,7 @@ TEST_CASE("method matching")
         CHECK(c.should_instrument(&method.get()));
 
         Method(module, GetModuleName) = "other.dll";
-        CHECK(!c.should_instrument(&method.get()));
+        CHECK(not c.should_instrument(&method.get()));
     }
 
     SUBCASE("by class") {
@@ -309,7 +308,7 @@ TEST_CASE("method matching")
 
         Method(method, GetFullName) = "Extinction.Rebellions.Protest";
 
-        CHECK(!c.should_instrument(&method.get()));
+        CHECK(not c.should_instrument(&method.get()));
     }
 
     SUBCASE("by path") {
@@ -326,7 +325,7 @@ TEST_CASE("method matching")
 
         Method(module, GetFullPath) = "/usr/share/xr.dll";
 
-        CHECK(!c.should_instrument(&method.get()));
+        CHECK(not c.should_instrument(&method.get()));
     }
 }
 
