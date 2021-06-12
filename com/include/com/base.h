@@ -5,7 +5,7 @@
 
 namespace com {
 
-inline namespace detail {
+namespace detail {
     template <typename Interface, typename T>
     inline void *query(T *obj, const GUID &iid) {
         if (iid == guid_of<Interface>())
@@ -39,7 +39,7 @@ public:
             AddRef();
             return S_OK;
         }
-        
+
         return E_NOINTERFACE;
     }
 

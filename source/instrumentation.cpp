@@ -56,7 +56,7 @@ namespace {
         auto &builder = instrumentation::signature_builder;
         com::hresult::check(builder->Clear());
         com::hresult::check(type->AddToSignature(builder));
-        const COR_SIGNATURE *signature = builder.get<const COR_SIGNATURE *>(&ISignatureBuilder::GetCorSignaturePtr);
+        const COR_SIGNATURE *signature = builder.get(&ISignatureBuilder::GetCorSignaturePtr);
         return std::vector<COR_SIGNATURE>(signature, signature + builder.get(&ISignatureBuilder::GetSize));
     }
 }
@@ -74,15 +74,15 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
     try {
         type_token = type.as<ITokenType>().get(&ITokenType::GetToken);
     } catch (const std::system_error &) {
-        type_token = metadata.get<mdTypeSpec>(&IMetaDataEmit::GetTokenFromTypeSpec, signature.data(), signature.size());
+        type_token = metadata.get(&IMetaDataEmit::GetTokenFromTypeSpec, signature.data(), signature.size());
     }
 
     if (object_to_string_refs.find(module_id) == object_to_string_refs.end()) {
         auto system_runtime = find_assembly_ref(module.meta_data_assembly_import(), u"System.Runtime");
         auto import = module.meta_data_import();
-        auto system_object = metadata.get<mdTypeRef>(&IMetaDataEmit::DefineTypeRefByName, system_runtime, u"System.Object");
+        auto system_object = metadata.get(&IMetaDataEmit::DefineTypeRefByName, system_runtime, u"System.Object");
         constexpr COR_SIGNATURE to_string_sig[] = { IMAGE_CEE_CS_CALLCONV_DEFAULT_HASTHIS, 0, ELEMENT_TYPE_STRING };
-        object_to_string_refs[module_id] = metadata.get<mdMemberRef>(&IMetaDataEmit::DefineMemberRef, system_object, u"ToString", to_string_sig, sizeof(to_string_sig));
+        object_to_string_refs[module_id] = metadata.get(&IMetaDataEmit::DefineMemberRef, system_object, u"ToString", to_string_sig, sizeof(to_string_sig));
     }
 
     instruction_sequence result;
@@ -110,7 +110,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
         };
     } else {
         auto locals = method.get(&IMethodInfo::GetLocalVariables);
-        auto local = locals.get<DWORD>(&ILocalVariableCollection::AddLocal, type);
+        auto local = locals.get(&ILocalVariableCollection::AddLocal, type);
         result += {
             create_store_local_instruction(local),
             create_load_local_address_instruction(local),
