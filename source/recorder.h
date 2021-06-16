@@ -10,7 +10,7 @@
 #include "event.h"
 
 namespace appmap {
-    using recording = std::vector<event>;
+    using recording = std::vector<std::unique_ptr<event>>;
 
     namespace recorder {
         extern appmap::recording events;

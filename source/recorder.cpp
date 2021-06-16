@@ -14,70 +14,73 @@ namespace appmap::recorder {
 }
 
 namespace {
-    void method_called(FunctionID id)
+    const call_event *method_called(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
         if (spdlog::get_level() >= spdlog::level::trace) {
             const auto &method_info = method_infos.at(id);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        recorder::events.push_back({event_kind::call, id});
+        auto event = std::make_unique<call_event>(id);
+        auto ptr = event.get();
+        recorder::events.push_back(std::move(event));
+        return ptr;
     }
 
-    void method_returned_void(FunctionID id)
+    void method_returned_void(const call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        if (spdlog::get_level() >= spdlog::level::trace) {
-            const auto &method_info = method_infos.at(id);
+        if (spdlog::get_level() >= spdlog::level::trace && call) {
+            const auto &method_info = method_infos.at(call->function);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        recorder::events.push_back({event_kind::ret, id});
+        recorder::events.push_back(std::make_unique<return_event>(call));
     }
 
     template <typename T>
-    void method_returned(T return_value, FunctionID id)
+    void method_returned(T return_value, const call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        if (spdlog::get_level() >= spdlog::level::trace) {
-            const auto &method_info = method_infos.at(id);
+        if (spdlog::get_level() >= spdlog::level::trace && call) {
+            const auto &method_info = method_infos.at(call->function);
             spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
         }
-        recorder::events.push_back({event_kind::ret, id, return_value});
+        recorder::events.push_back(std::make_unique<return_event>(call, return_value));
     }
 
     template <>
-    void method_returned<const char *>(const char *return_value, FunctionID id)
+    void method_returned<const char *>(const char *return_value, const call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
-        if (spdlog::get_level() >= spdlog::level::trace) {
-            const auto &method_info = method_infos.at(id);
+        if (spdlog::get_level() >= spdlog::level::trace && call) {
+            const auto &method_info = method_infos.at(call->function);
             if (return_value == nullptr)
                 spdlog::trace("{}({}, {}.{})", __FUNCTION__, "null", method_info.defined_class, method_info.method_id);
             else
                 spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
         }
         if (return_value == nullptr)
-            recorder::events.push_back({event_kind::ret, id, nullptr});
+            recorder::events.push_back(std::make_unique<return_event>(call, nullptr));
         else
-            recorder::events.push_back({event_kind::ret, id, std::string(return_value)});
+            recorder::events.push_back(std::make_unique<return_event>(call, std::string(return_value)));
     }
 
     TEST_CASE("method_returned()")
     {
         recorder::events.clear();
         SUBCASE("with a string argument") {
-            method_returned("hello", 42);
-            CHECK(recorder::events.back() == event{event_kind::ret, 42, std::string("hello")});
+            method_returned("hello", nullptr);
+            CHECK((*recorder::events.back() == return_event{nullptr, std::string("hello")}));
         }
 
         SUBCASE("with nullptr") {
-            method_returned<const char *>(nullptr, 42);
-            CHECK(recorder::events.back() == event{event_kind::ret, 42, nullptr});
+            method_returned<const char *>(nullptr, nullptr);
+            CHECK((*recorder::events.back() == return_event{nullptr, nullptr}));
         }
     }
 
     [[maybe_unused]]
-    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, FunctionID id, com::ptr<IType> return_type)
+    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, uint64_t call_event_local, com::ptr<IType> return_type)
     {
         const auto cor_type = return_type.get<CorElementType>(&IType::GetCorElementType);
 
@@ -85,7 +88,7 @@ namespace {
         if (cor_type != ELEMENT_TYPE_VOID)
             seq += instr.create_instruction(Cee_Dup);
 
-        seq += instr.load_constants(id);
+        seq += instr.create_load_local_instruction(call_event_local);
 
         switch (cor_type) {
             case ELEMENT_TYPE_VOID:
@@ -139,7 +142,7 @@ namespace {
 void recorder::instrument(clrie::method_info method)
 {
     clrie::instruction_graph code = method.instructions();
-    const instrumentation instr(method);
+    instrumentation instr(method);
 
     FunctionID id = method.function_id();
     auto return_type = method.return_type();
@@ -150,10 +153,13 @@ void recorder::instrument(clrie::method_info method)
         return_type.get(&IType::GetName)
     };
 
+    const auto call_event_local = instr.add_local<call_event *>();
+
     // prologue
     const auto first = code.first_instruction();
     code.insert_before(first, instr.load_constants(id));
     code.insert_before(first, instr.make_call(&method_called));
+    code.insert_before(first, instr.create_store_local_instruction(call_event_local));
 
     auto srdi = method.single_ret_default_instrumentation();
     srdi->Initialize(code);
@@ -167,5 +173,5 @@ void recorder::instrument(clrie::method_info method)
         last = last.get(&IInstruction::GetPreviousInstruction);
     }
 
-    code.insert_before_and_retarget_offsets(last, make_return(instr, id, return_type));
+    code.insert_before_and_retarget_offsets(last, make_return(instr, call_event_local, return_type));
 }

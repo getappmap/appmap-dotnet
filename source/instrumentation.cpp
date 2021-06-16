@@ -109,7 +109,6 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
             create_branch_instruction(Cee_Beq_S, end),
         };
     } else {
-        auto locals = method.get(&IMethodInfo::GetLocalVariables);
         auto local = locals.get(&ILocalVariableCollection::AddLocal, type);
         result += {
             create_store_local_instruction(local),

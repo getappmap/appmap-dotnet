@@ -4,6 +4,7 @@
 #include <spdlog/fmt/bundled/ranges.h>
 #include <range/v3/algorithm/any_of.hpp>
 #include <range/v3/iterator/operations.hpp>
+#include <range/v3/view/remove_if.hpp>
 #include <range/v3/view/split.hpp>
 #include <range/v3/view/transform.hpp>
 #include <range/v3/view/unique.hpp>
@@ -37,7 +38,8 @@ namespace {
         classmap::classmap map;
 
         for (const method_info &method: rec
-            | transform([](const auto &ev) { return ev.function; }) | unique
+            | remove_if([](const auto &ev) { return typeid(*ev) != typeid(call_event); })
+            | transform([](const auto &ev) { return static_cast<const call_event &>(*ev).function; }) | unique
             | transform([](const FunctionID fun) { return method_infos.at(fun); }))
         {
             classmap::code_container *code = &map;
@@ -66,56 +68,65 @@ namespace appmap {
         j["static"] = m.is_static;
     }
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(event_kind, {
-        { event_kind::call, "call" },
-        { event_kind::ret, "return" }
-    })
-
-    void to_json(json &j, const appmap::event &event)
+    void to_json(json &j, const call_event &ev)
     {
-        j = method_infos.at(event.function);
-        j["event"] = event.kind;
+        j = method_infos.at(ev.function);
+        j["event"] = "call";
     }
+
+    void to_json([[maybe_unused]] json &j, [[maybe_unused]] const appmap::return_event &ev)
+    {
+        j["event"] = "return";
+        if (ev.value) {
+            const auto &method = method_infos.at(ev.call->function);
+            auto &rv = j["return_value"] = { { "class", method.return_type } };
+            std::visit([&rv] (auto &&arg) { rv["value"] = arg; }, *ev.value);
+        }
+    }
+
+    struct generation_visitor {
+        json &events;
+        using id_t = uint;
+
+        id_t id = 1;
+
+        std::unordered_map<const call_event *, id_t> calls{};
+
+        void operator()(const call_event &ev) {
+            calls[&ev] = id;
+            push(ev);
+        }
+
+        void operator()(const return_event &ev) {
+            json jev(ev);
+            jev["parent_id"] = calls.at(ev.call);
+            calls.erase(ev.call);
+            push(std::move(jev));
+        }
+
+        void operator()(const event &ev) {
+            const auto &t = typeid(ev);
+            if (t == typeid(call_event)) {
+                operator()(static_cast<const call_event &>(ev));
+            } else if (t == typeid(return_event)) {
+                operator()(static_cast<const return_event &>(ev));
+            } else {
+                assert(false && "unexpected event type");
+            }
+        }
+
+    private:
+        void push(json &&event) {
+            event["id"] = id++;
+            events.push_back(std::move(event));
+        }
+    };
 
     void to_json(json &j, const appmap::recording &events)
     {
-        uint id = 1;
-        struct stack_entry { FunctionID fid; uint ev; };
-        std::vector<stack_entry> stack;
-        j = json::array();
+        generation_visitor v{j};
         for (const auto &ev : events) {
-            json jev;
-            if (ev.kind == event_kind::call) {
-                jev = ev;
-                stack.push_back({ev.function, id});
-            } else if (ev.kind == event_kind::ret) {
-                if (stack.empty()) {
-                    // known bug
-                    spdlog::warn("stack empty on return, ignoring");
-                    continue;
-                }
-                if (stack.back().fid != ev.function) {
-                    spdlog::warn("function mismatch detected on return; function: {}, stack: {}", method_infos.at(ev.function).method_id, stack | ranges::views::transform([](auto &ev){ return method_infos.at(ev.fid).method_id; }));
-                    if (ranges::any_of(stack, [fid = ev.function](const auto &ev) { return ev.fid == fid; })) {
-                        // try to do out best by generating the missing returns
-                        while (stack.back().fid != ev.function) {
-                            j.push_back({ { "event", "return" }, { "parent_id", stack.back().ev }, { "id", id++ } });
-                            stack.pop_back();
-                        }
-                    } else {
-                        // ok, this is super weird, did we miss the call? do nothing
-                    }
-                }
-                jev = { { "event", "return" }, { "parent_id", stack.back().ev } };
-                if (ev.return_value) {
-                    const auto &method = method_infos.at(ev.function);
-                    auto &rv = jev["return_value"] = { { "class", method.return_type } };
-                    std::visit([&rv] (auto &&arg) { rv["value"] = arg; }, *ev.return_value);
-                }
-                stack.pop_back();
-            }
-            jev["id"] = id++;
-            j.push_back(jev);
+            v(*ev);
         }
     }
 
@@ -148,7 +159,7 @@ namespace appmap {
     }
 }
 
-std::string appmap::generate(appmap::recording events, bool generate_classmap)
+std::string appmap::generate(const appmap::recording &events, bool generate_classmap)
 {
     json result = { { "events", events } };
     if (generate_classmap)
@@ -157,12 +168,13 @@ std::string appmap::generate(appmap::recording events, bool generate_classmap)
 }
 
 TEST_CASE("basic generation") {
-    const appmap::recording events = {
-        { event_kind::call, 42 },
-        { event_kind::call, 43 },
-        { event_kind::ret, 43, { uint64_t{42} } },
-        { event_kind::ret, 42, { int64_t{-31337} } },
-    };
+    appmap::recording events;
+
+    events.push_back(std::make_unique<call_event>(42));
+    events.push_back(std::make_unique<call_event>(43));
+    events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[1].get()), uint64_t{42}));
+    events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[0].get()), int64_t{-31337}));
+
     method_infos[42] = { "Some.Class", "Method", false, "I8" };
     method_infos[43] = { "Some.Class", "OtherMethod", true, "U4" };
 

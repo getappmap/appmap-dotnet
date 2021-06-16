@@ -8,7 +8,7 @@
 
 #include <corhdr.h>
 
-namespace {
+namespace appmap {
     template <typename T>
     constexpr COR_SIGNATURE type_signature;
 
@@ -68,22 +68,24 @@ namespace {
             type_signature<Args>...
         };
     };
-}
 
-namespace appmap {
     struct instrumentation : public clrie::instruction_factory {
         instrumentation(clrie::method_info method_info) :
             clrie::instruction_factory(method_info.instruction_factory()),
             method(method_info),
             module(method.module_info()),
             module_id(module.module_id()),
-            metadata(module.meta_data_emit())
+            metadata(module.meta_data_emit()),
+            type_factory(module.create_type_factory()),
+            locals(method.get(&IMethodInfo::GetLocalVariables))
         {}
 
         mutable clrie::method_info method;
         mutable clrie::module_info module;
         const ModuleID module_id;
         mutable com::ptr<IMetaDataEmit> metadata;
+        mutable com::ptr<ITypeCreator> type_factory;
+        mutable com::ptr<ILocalVariableCollection> locals;
 
         static com::ptr<ISignatureBuilder> signature_builder;
 
@@ -93,6 +95,13 @@ namespace appmap {
         }
 
         instruction_sequence create_call_to_string(com::ptr<IType> type) const noexcept;
+
+        template <typename T>
+        uint64_t add_local()
+        {
+            auto t = type_factory.get(&ITypeCreator::FromCorElement, static_cast<CorElementType>(type_signature<T>));
+            return locals.get(&ILocalVariableCollection::AddLocal, t);
+        }
 
     protected:
         instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;

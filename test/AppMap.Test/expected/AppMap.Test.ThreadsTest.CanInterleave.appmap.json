@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.Threads",
+      "event": "call",
+      "id": 1,
+      "method_id": "Fun1",
+      "static": true
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Threads",
+      "event": "call",
+      "id": 2,
+      "method_id": "Fun2",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 3,
+      "parent_id": 1
+    },
+    {
+      "event": "return",
+      "id": 4,
+      "parent_id": 2
+    }
+  ]
+}
