@@ -6,6 +6,22 @@
 
 namespace clrie {
     struct instruction_graph : public com::ptr<IInstructionGraph> {
+        // not strictly an up to spec iterator, but just enough for our purposes
+        struct iterator: com::ptr<IInstruction>
+        {
+            using ptr::ptr;
+            iterator(ptr &&other): ptr(other) {}
+
+            iterator &operator++() {
+                iterator next;
+                if (ptr_->GetNextInstruction(&next) == S_OK) {
+                    return (*this) = next;
+                } else {
+                    return (*this) = nullptr;
+                }
+            }
+        };
+
         instruction_graph(com::ptr<IInstructionGraph> &&graph) noexcept : ptr(std::move(graph)) {}
 
         com::ptr<IMethodInfo> method_info() {
@@ -13,41 +29,41 @@ namespace clrie {
         }
 
         // Get the current first and last instructions reflecting changes that instrumentation methods have made
-        com::ptr<IInstruction> first_instruction() {
+        iterator first_instruction() {
             return get(&interface_type::GetFirstInstruction);
         }
-        com::ptr<IInstruction> last_instruction() {
+        iterator last_instruction() {
             return get(&interface_type::GetLastInstruction);
         }
 
-        com::ptr<IInstruction> original_first_instruction() {
+        iterator original_first_instruction() {
             return get(&interface_type::GetOriginalFirstInstruction);
         }
-        com::ptr<IInstruction> original_last_instruction() {
+        iterator original_last_instruction() {
             return get(&interface_type::GetOriginalLastInstruction);
         }
 
-        com::ptr<IInstruction> uninstrumented_first_instruction() {
+        iterator uninstrumented_first_instruction() {
             return get(&interface_type::GetUninstrumentedFirstInstruction);
         }
-        com::ptr<IInstruction> uninstrumented_last_instruction() {
+        iterator uninstrumented_last_instruction() {
             return get(&interface_type::GetUninstrumentedLastInstruction);
         }
 
-        com::ptr<IInstruction> instruction_at_offset(unsigned int offset);
-        com::ptr<IInstruction> instruction_at_original_offset(unsigned int offset);
+        iterator instruction_at_offset(unsigned int offset);
+        iterator instruction_at_original_offset(unsigned int offset);
 
-        com::ptr<IInstruction> instruction_at_uninstrumented_offset(unsigned int dw_offset);
+        iterator instruction_at_uninstrumented_offset(unsigned int dw_offset);
 
         // Insert an instruction before another instruction. jmp offsets that point to the original instruction
         // are not updated to reflect this change
-        void insert_before(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new)
+        void insert_before(iterator instruction_orig, com::ptr<IInstruction> instruction_new)
         {
             com::hresult::check(ptr_->InsertBefore(instruction_orig, instruction_new));
         }
 
         template <typename Container>
-        void insert_before(com::ptr<IInstruction> pos, const Container &instructions)
+        void insert_before(iterator pos, const Container &instructions)
         {
             for (auto ins : instructions)
                 insert_before(pos, ins);
@@ -55,17 +71,17 @@ namespace clrie {
 
         // Insert an instruction after another instruction. jmp offsets that point to the next instruction after
         // the other instruction are not updated to reflect this change
-        void insert_after(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new);
+        void insert_after(iterator instruction_orig, com::ptr<IInstruction> instruction_new);
 
         // Insert an instruction before another instruction AND update jmp targets and exception ranges that used
         // to point to the old instruction to point to the new instruction.
-        void insert_before_and_retarget_offsets(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> instruction_new)
+        void insert_before_and_retarget_offsets(iterator instruction_orig, com::ptr<IInstruction> instruction_new)
         {
             com::hresult::check(ptr_->InsertBeforeAndRetargetOffsets(instruction_orig, instruction_new));
         }
 
         template <typename Container>
-        void insert_before_and_retarget_offsets(com::ptr<IInstruction> pos, const Container &instructions)
+        void insert_before_and_retarget_offsets(iterator pos, const Container &instructions)
         {
             bool retargeted = false;
             for (auto ins : instructions) {
@@ -79,10 +95,10 @@ namespace clrie {
         }
 
         // Replace an instruction with another instruction. The old instruction continues to live in the original graph but is marked replaced
-        void replace(com::ptr<IInstruction> instruction_orig, com::ptr<IInstruction> *p_instruction_new);
+        void replace(iterator instruction_orig, com::ptr<IInstruction> *p_instruction_new);
 
         // Remove an instruction. The old instruction continues to live in the original graph but is marked deleted
-        void remove(com::ptr<IInstruction> *p_instruction_orig);
+        void remove(iterator *p_instruction_orig);
 
         // Remove all instructions from the current graph. The original instructions are still accessible from the original first and original last
         // methods. These are all marked deleted  and their original next fields are still set.

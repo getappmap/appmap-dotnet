@@ -155,23 +155,27 @@ void recorder::instrument(clrie::method_info method)
 
     const auto call_event_local = instr.add_local<call_event *>();
 
+    auto ins = code.first_instruction();
+
     // prologue
-    const auto first = code.first_instruction();
-    code.insert_before(first, instr.load_constants(id));
-    code.insert_before(first, instr.make_call(&method_called));
-    code.insert_before(first, instr.create_store_local_instruction(call_event_local));
+    code.insert_before(ins, instr.load_constants(id));
+    code.insert_before(ins, instr.make_call(&method_called));
+    code.insert_before(ins, instr.create_store_local_instruction(call_event_local));
 
-    auto srdi = method.single_ret_default_instrumentation();
-    srdi->Initialize(code);
-    com::hresult::check(srdi->ApplySingleRetDefaultInstrumentation());
+    // Look for returns and insert epilogue gadget before each.
+    // (Note we could instead transfrom the method to have a single return point
+    // at the end and insert one epilogue there.
+    // This is what CLRIE's SingleRetDefaultInstrumentation is supposed to do,
+    // but it's buggy and produces broken code in some cases.)
+    while (++ins) {
+        com::ptr<IInstruction> next;
+        if (ins.get(&IInstruction::GetOpCode) == Cee_Ret) {
+            if (is_tail(ins)) {
+                spdlog::warn("Tail call detected in {} -- tail calls aren't fully supported yet, so your appmap might be incorrect.\n\tPlease report at https://github.com/applandinc/appmap-dotnet/issues", method.full_name());
+                ins = ins.get(&IInstruction::GetPreviousInstruction);
+            }
 
-    // epilogue
-    auto last = code.last_instruction();
-    bool tail = is_tail(last);
-    if (tail) {
-        spdlog::warn("Tail call detected in {} -- tail calls aren't fully supported yet, so your appmap might be incorrect.\n\tPlease report at https://github.com/applandinc/appmap-dotnet/issues", method.full_name());
-        last = last.get(&IInstruction::GetPreviousInstruction);
+            code.insert_before_and_retarget_offsets(ins, make_return(instr, call_event_local, return_type));
+        }
     }
-
-    code.insert_before_and_retarget_offsets(last, make_return(instr, call_event_local, return_type));
 }

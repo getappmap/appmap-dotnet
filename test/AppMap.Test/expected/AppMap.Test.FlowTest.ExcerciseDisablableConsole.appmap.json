@@ -1,0 +1,52 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.DisablableConsole",
+      "event": "call",
+      "id": 1,
+      "method_id": "Write",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.DisablableConsole",
+      "event": "call",
+      "id": 3,
+      "method_id": "Write",
+      "static": true
+    },
+    {
+      "defined_class": "AppMap.Test.Code.DisablableConsole",
+      "event": "call",
+      "id": 4,
+      "method_id": ".cctor",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 5,
+      "parent_id": 4
+    },
+    {
+      "event": "return",
+      "id": 6,
+      "parent_id": 3
+    },
+    {
+      "defined_class": "AppMap.Test.Code.DisablableConsole",
+      "event": "call",
+      "id": 7,
+      "method_id": "Write",
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 8,
+      "parent_id": 7
+    }
+  ]
+}
