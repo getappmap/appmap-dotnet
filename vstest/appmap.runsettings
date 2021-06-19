@@ -4,7 +4,12 @@
     <InProcDataCollectors>
       <InProcDataCollector assemblyQualifiedName="AppMap.DataCollector, appmap.collector, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
                      enabled="True"
-                     codebase="%PWD%/appmap.collector.dll" />
+                     codebase="%PWD%/appmap.collector.dll"
+                     uri="datacollector://AppLand/AppMap/1.0"
+                     >
+        <!-- Note: this empty Configuration is required in vstest 15.0.0, as is uri above //-->
+        <Configuration />
+      </InProcDataCollector>
     </InProcDataCollectors>
   </InProcDataCollectionRunSettings>
   <RunConfiguration>
