@@ -177,6 +177,6 @@ namespace clrie {
         }
 
     private:
-        mutable com::ptr<IInstructionFactory> ptr;
-    };    
+        com::ptr<IInstructionFactory> ptr;
+    };
 }

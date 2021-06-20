@@ -28,51 +28,51 @@ namespace clrie {
         using ptr::ptr;
         module_info(ptr &&info) : ptr(std::move(info)) {}
 
-        std::string module_name() {
+        std::string module_name() const {
             return get(&interface_type::GetModuleName);
         }
-        std::string full_path() {
+        std::string full_path() const {
             return get(&interface_type::GetFullPath);
         }
 
         // Get info about the assembly that contains this module
-        com::ptr<IAssemblyInfo> assembly_info() {
+        com::ptr<IAssemblyInfo> assembly_info() const {
             return get(&interface_type::GetAssemblyInfo);
         }
 
-        com::ptr<IAppDomainInfo> app_domain_info() {
+        com::ptr<IAppDomainInfo> app_domain_info() const {
             return get(&interface_type::GetAppDomainInfo);
         }
 
-        com::ptr<IMetaDataImport> meta_data_import() {
+        com::ptr<IMetaDataImport> meta_data_import() const {
             return get(&interface_type::GetMetaDataImport).as<IMetaDataImport>();
         }
-        com::ptr<IMetaDataAssemblyImport> meta_data_assembly_import() {
+        com::ptr<IMetaDataAssemblyImport> meta_data_assembly_import() const {
             return get(&interface_type::GetMetaDataAssemblyImport).as<IMetaDataAssemblyImport>();
         }
 
         // NOTE: It is expected that these fail for winmd files which do not support
         // metadata emit.
-        com::ptr<IMetaDataEmit> meta_data_emit() {
+        com::ptr<IMetaDataEmit> meta_data_emit() const {
             return get(&interface_type::GetMetaDataEmit).as<IMetaDataEmit>();
         }
-        com::ptr<IUnknown> meta_data_assembly_emit() {
+        com::ptr<IUnknown> meta_data_assembly_emit() const {
             return get(&interface_type::GetMetaDataAssemblyEmit);
         }
 
-        ModuleID module_id() {
+        ModuleID module_id() const {
             return get(&interface_type::GetModuleID);
         }
 
         // Get the managed module version id
-        GUID mvid() {
+        GUID mvid() const {
             return get(&interface_type::GetMVID);
         }
 
-        bool is_il_only() {
+        bool is_il_only() const {
             return get(&interface_type::GetIsILOnly);
         }
-        bool is_mscorlib() {
+        bool is_mscorlib() const {
             return get(&interface_type::GetIsMscorlib);
         }
 
@@ -80,16 +80,16 @@ namespace clrie {
         // Note, dynamic modules have a base load address of 0, and any attempts
         // to resolve an address to an RVA in this module will result in an
         // error.
-        bool is_dynamic() {
+        bool is_dynamic() const {
             return get(&interface_type::GetIsDynamic);
         }
-        bool is_ngen() {
+        bool is_ngen() const {
             return get(&interface_type::GetIsNgen);
         }
-        bool is_win_rt() {
+        bool is_win_rt() const {
             return get(&interface_type::GetIsWinRT);
         }
-        bool is64bit() {
+        bool is64bit() const {
             return get(&interface_type::GetIs64bit);
         }
 
@@ -101,19 +101,19 @@ namespace clrie {
         void cor_header();
 
         // Returns the modules entrypoint token. If the module has no entrypoint token, returns E_FAIL;
-        unsigned int entrypoint_token() {
+        unsigned int entrypoint_token() const {
             return get(&interface_type::GetEntrypointToken);
         }
 
         // Returns the VS_FIXEDFILEINFO for this module.
         void module_version();
 
-        void request_rejit(mdToken method_token) {
+        void request_rejit(mdToken method_token) const {
             com::hresult::check(ptr_->RequestRejit(method_token));
         }
 
         // Creates a type factory associated with this module.
-        com::ptr<ITypeCreator> create_type_factory() {
+        com::ptr<ITypeCreator> create_type_factory() const {
             return get(&interface_type::CreateTypeFactory);
         }
 

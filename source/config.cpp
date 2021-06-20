@@ -145,12 +145,12 @@ appmap::config & appmap::config::instance()
 bool appmap::config::should_instrument(clrie::method_info method)
 {
     const auto module = method.module_info();
-    const std::string module_name = module.mut().get(&IModuleInfo::GetModuleName);
+    const std::string module_name = module.get(&IModuleInfo::GetModuleName);
 
     if (std::find(modules.begin(), modules.end(), module_name) != modules.end())
         return true;
 
-    const fs::path module_path = std::string(module.mut().get(&IModuleInfo::GetFullPath));
+    const fs::path module_path = std::string(module.get(&IModuleInfo::GetFullPath));
 
     for (fs::path &p: paths) {
         if (p.is_relative())

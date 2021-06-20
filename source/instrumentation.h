@@ -80,12 +80,12 @@ namespace appmap {
             locals(method.get(&IMethodInfo::GetLocalVariables))
         {}
 
-        mutable clrie::method_info method;
-        mutable clrie::module_info module;
+        clrie::method_info method;
+        clrie::module_info module;
         const ModuleID module_id;
-        mutable com::ptr<IMetaDataEmit> metadata;
-        mutable com::ptr<ITypeCreator> type_factory;
-        mutable com::ptr<ILocalVariableCollection> locals;
+        com::ptr<IMetaDataEmit> metadata;
+        com::ptr<ITypeCreator> type_factory;
+        com::ptr<ILocalVariableCollection> locals;
 
         static com::ptr<ISignatureBuilder> signature_builder;
 

@@ -45,7 +45,7 @@ struct ptr
 
     template <class Other>
     ptr& operator=(const ptr<Other> other) {
-        hresult::check(other.mut()->QueryInterface(guid_of<Interface>(), reinterpret_cast<void**>(this)));
+        hresult::check(other->QueryInterface(guid_of<Interface>(), reinterpret_cast<void**>(&*this)));
         return *this;
     }
 
@@ -54,11 +54,11 @@ struct ptr
         return *this;
     }
 
-    constexpr operator Interface*() noexcept {
+    constexpr operator Interface*() const noexcept {
         return ptr_;
     }
 
-    Interface* operator->() noexcept {
+    Interface* operator->() const noexcept {
         return ptr_;
     }
 
@@ -67,7 +67,7 @@ struct ptr
         return &ptr_;
     }
 
-    bstr get(HRESULT (Interface::*fun)(BSTR *))
+    bstr get(HRESULT (Interface::*fun)(BSTR *)) const
     {
         bstr result;
         hresult::check(std::invoke(fun, *ptr_, &result));
@@ -75,7 +75,7 @@ struct ptr
     }
 
     template <typename T>
-    T get(HRESULT (Interface::*fun)(T *))
+    T get(HRESULT (Interface::*fun)(T *)) const
     {
         T result;
         hresult::check(std::invoke(fun, *ptr_, &result));
@@ -83,7 +83,7 @@ struct ptr
     }
 
     template <typename... Params, typename... Args>
-    auto get(HRESULT (Interface::*fun)(Params...), Args&&... args)
+    auto get(HRESULT (Interface::*fun)(Params...), Args&&... args) const
     {
         std::remove_pointer_t<detail::last_t<Params...>> result;
         hresult::check(std::invoke(fun, *ptr_, std::forward<Args>(args)..., &result));
@@ -92,7 +92,7 @@ struct ptr
 
     template <class Other>
     requires std::is_base_of_v<IUnknown, Other>
-    ptr<Other> get(HRESULT (Interface::*fun)(Other **))
+    ptr<Other> get(HRESULT (Interface::*fun)(Other **)) const
     {
         ptr<Other> result;
         hresult::check(std::invoke(fun, *ptr_, &result));
@@ -109,15 +109,11 @@ struct ptr
     }
 
     template <class Other>
-    ptr<Other> as()
+    ptr<Other> as() const
     {
         ptr<Other> result;
         result = *this;
         return result;
-    }
-
-    ptr &mut() const {
-        return const_cast<ptr &>(*this);
     }
 
 protected:
