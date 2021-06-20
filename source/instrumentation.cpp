@@ -51,17 +51,17 @@ namespace {
         return mdAssemblyRefNil;
     }
 
-    std::vector<COR_SIGNATURE> signature_of_type(com::ptr<IType> type)
+    std::vector<COR_SIGNATURE> signature_of_type(const clrie::type &type)
     {
         auto &builder = instrumentation::signature_builder;
         com::hresult::check(builder->Clear());
-        com::hresult::check(type->AddToSignature(builder));
+        type.add_to_signature(builder);
         const COR_SIGNATURE *signature = builder.get(&ISignatureBuilder::GetCorSignaturePtr);
         return std::vector<COR_SIGNATURE>(signature, signature + builder.get(&ISignatureBuilder::GetSize));
     }
 }
 
-clrie::instruction_factory::instruction_sequence appmap::instrumentation::create_call_to_string(com::ptr<IType> type) const noexcept
+clrie::instruction_factory::instruction_sequence appmap::instrumentation::create_call_to_string(const clrie::type &type) const noexcept
 {
     static std::unordered_map<ModuleID, mdMemberRef> object_to_string_refs;
 
@@ -92,8 +92,8 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     const bool is_nullable = !is_ref && [&type, &signature]() {
         if (signature[0] != ELEMENT_TYPE_GENERICINST) return false;
-        auto rel_type = type.as<ICompositeType>().get(&ICompositeType::GetRelatedType);
-        return std::string(rel_type.get(&IType::GetName)) == "System.Nullable`1";
+        clrie::type rel_type = type.as<ICompositeType>().get(&ICompositeType::GetRelatedType);
+        return rel_type.name() == "System.Nullable`1";
     }();
 
     const bool is_mvar = signature[0] == ELEMENT_TYPE_MVAR;

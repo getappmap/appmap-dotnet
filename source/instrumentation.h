@@ -94,7 +94,7 @@ namespace appmap {
             return make_call_sig(reinterpret_cast<void *>(f), gsl::make_span(func_traits<F>::signature));
         }
 
-        instruction_sequence create_call_to_string(com::ptr<IType> type) const noexcept;
+        instruction_sequence create_call_to_string(const clrie::type &type) const noexcept;
 
         template <typename T>
         uint64_t add_local()

@@ -79,10 +79,9 @@ namespace {
         }
     }
 
-    [[maybe_unused]]
-    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, uint64_t call_event_local, com::ptr<IType> return_type)
+    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, uint64_t call_event_local, const clrie::type &return_type)
     {
-        const auto cor_type = return_type.get<CorElementType>(&IType::GetCorElementType);
+        const auto cor_type = return_type.cor_element_type();
 
         clrie::instruction_factory::instruction_sequence seq;
         if (cor_type != ELEMENT_TYPE_VOID)
@@ -146,11 +145,12 @@ void recorder::instrument(clrie::method_info method)
 
     FunctionID id = method.function_id();
     auto return_type = method.return_type();
+    const auto is_static = method.is_static() || method.is_static_constructor();
     method_infos[id] = {
-        method.declaring_type().get(&IType::GetName),
+        method.declaring_type().name(),
         method.name(),
-        (method.is_static() || method.is_static_constructor()),
-        return_type.get(&IType::GetName)
+        is_static,
+        return_type.name()
     };
 
     const auto call_event_local = instr.add_local<call_event *>();

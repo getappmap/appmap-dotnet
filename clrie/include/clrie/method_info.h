@@ -7,6 +7,7 @@
 #include "clrie/instruction_graph.h"
 #include "clrie/instruction_factory.h"
 #include "clrie/module_info.h"
+#include "clrie/type.h"
 #undef __valid // microsoft can't into C++ -- __ names are reserved
 
 template<>
@@ -89,10 +90,10 @@ namespace clrie {
         com::ptr<IEnumMethodParameters> parameters() const {
             return get(&interface_type::GetParameters);
         }
-        com::ptr<IType> declaring_type() const {
+        type declaring_type() const {
             return get(&interface_type::GetDeclaringType);
         }
-        com::ptr<IType> return_type() const {
+        type return_type() const {
             return get(&interface_type::GetReturnType);
         }
 
