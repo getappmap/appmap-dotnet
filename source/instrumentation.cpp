@@ -87,7 +87,9 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     instruction_sequence result;
 
-    const bool is_ref = signature[0] == ELEMENT_TYPE_CLASS
+    const bool is_ref =
+        signature[0] == ELEMENT_TYPE_CLASS
+        || signature[0] == ELEMENT_TYPE_OBJECT
         || (signature[0] == ELEMENT_TYPE_GENERICINST && signature[1] == ELEMENT_TYPE_CLASS);
 
     const bool is_nullable = !is_ref && [&type, &signature]() {
