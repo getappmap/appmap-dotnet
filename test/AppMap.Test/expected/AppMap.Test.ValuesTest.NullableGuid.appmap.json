@@ -5,6 +5,12 @@
       "event": "call",
       "id": 1,
       "method_id": "NullableGuid",
+      "parameters": [
+        {
+          "class": "BOOLEAN",
+          "value": true
+        }
+      ],
       "static": true
     },
     {
@@ -21,6 +27,12 @@
       "event": "call",
       "id": 3,
       "method_id": "NullableGuid",
+      "parameters": [
+        {
+          "class": "BOOLEAN",
+          "value": false
+        }
+      ],
       "static": true
     },
     {

@@ -19,8 +19,10 @@ namespace appmap {
 
     struct call_event: event {
         FunctionID function;
+        std::vector<cor_value> arguments;
 
-        call_event(FunctionID fun): function(fun) {}
+        call_event(FunctionID fun, std::vector<cor_value> &&args = {}):
+            function(fun), arguments(std::move(args)) {}
 
         bool operator==(const event &other) const noexcept override {
             if (!event::operator==(other))

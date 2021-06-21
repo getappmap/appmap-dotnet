@@ -13,6 +13,7 @@ namespace appmap {
         std::string method_id;
         bool is_static;
         std::string return_type;
+        std::vector<std::string> parameters{};
     };
 
     inline std::unordered_map<FunctionID, method_info> method_infos;

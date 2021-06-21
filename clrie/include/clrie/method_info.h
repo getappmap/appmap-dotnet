@@ -4,6 +4,7 @@
 #include <cor.h>
 #include <InstrumentationEngine.h>
 #include "com/ptr.h"
+#include "clrie/detail/enumeration.h"
 #include "clrie/instruction_graph.h"
 #include "clrie/instruction_factory.h"
 #include "clrie/module_info.h"
@@ -87,8 +88,8 @@ namespace clrie {
             return get(&interface_type::GetIsStaticConstructor);
         }
 
-        com::ptr<IEnumMethodParameters> parameters() const {
-            return get(&interface_type::GetParameters);
+        auto parameters() const {
+            return detail::to_vector(get(&interface_type::GetParameters));
         }
         type declaring_type() const {
             return get(&interface_type::GetDeclaringType);

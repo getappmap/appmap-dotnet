@@ -14,6 +14,8 @@ namespace appmap::recorder {
 }
 
 namespace {
+    thread_local std::vector<cor_value> arguments;
+
     const call_event *method_called(FunctionID id)
     {
         std::lock_guard lock(appmap::recorder::mutex);
@@ -21,7 +23,7 @@ namespace {
             const auto &method_info = method_infos.at(id);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        auto event = std::make_unique<call_event>(id);
+        auto event = std::make_unique<call_event>(id, std::exchange(arguments, {}));
         auto ptr = event.get();
         recorder::events.push_back(std::move(event));
         return ptr;
@@ -84,8 +86,10 @@ namespace {
         const auto cor_type = return_type.cor_element_type();
 
         clrie::instruction_factory::instruction_sequence seq;
-        if (cor_type != ELEMENT_TYPE_VOID)
+        if (cor_type != ELEMENT_TYPE_VOID) {
             seq += instr.create_instruction(Cee_Dup);
+            seq += instr.capture_value(return_type);
+        }
 
         seq += instr.create_load_local_instruction(call_event_local);
 
@@ -105,23 +109,67 @@ namespace {
                 seq += instr.make_call(method_returned<bool>);
                 break;
 
-            default:
-                {
-                    spdlog::debug("capturing values of type {} unimplemented", std::string(return_type.get(&IType::GetName)));
-                    auto to_string = instr.create_call_to_string(return_type);
-                    seq.insert(seq.begin() + 1, to_string.begin(), to_string.end());
-                }
-                [[fallthrough]];
+            case ELEMENT_TYPE_U1:
+            case ELEMENT_TYPE_U2:
+            case ELEMENT_TYPE_U4:
+            case ELEMENT_TYPE_U8:
+                seq += instr.make_call(method_returned<uint64_t>);
+                break;
 
-            case ELEMENT_TYPE_STRING:
+            default:
                 seq += instr.make_call(method_returned<const char *>);
+                break;
+        }
+
+        return seq;
+    }
+
+    template <typename T>
+    void capture_argument(T value)
+    {
+        spdlog::trace("got argument: {}", value);
+        arguments.push_back(value);
+    }
+
+    template <>
+    void capture_argument<const char *>(const char *value)
+    {
+        if (value)
+            arguments.push_back(std::string(value));
+        else
+            arguments.push_back(nullptr);
+    }
+
+    clrie::instruction_factory::instruction_sequence capture_argument(const instrumentation &instr, const clrie::type &type)
+    {
+        clrie::instruction_factory::instruction_sequence seq;
+
+        seq += instr.capture_value(type);
+
+        switch (type.cor_element_type()) {
+            case ELEMENT_TYPE_VOID:
+                throw std::logic_error("unexpected invalid void parameter");
+
+            case ELEMENT_TYPE_I1:
+            case ELEMENT_TYPE_I2:
+            case ELEMENT_TYPE_I4:
+            case ELEMENT_TYPE_I8:
+                seq += instr.make_call(capture_argument<int64_t>);
+                break;
+
+            case ELEMENT_TYPE_BOOLEAN:
+                seq += instr.make_call(capture_argument<bool>);
                 break;
 
             case ELEMENT_TYPE_U1:
             case ELEMENT_TYPE_U2:
             case ELEMENT_TYPE_U4:
             case ELEMENT_TYPE_U8:
-                seq += instr.make_call(method_returned<uint64_t>);
+                seq += instr.make_call(capture_argument<uint64_t>);
+                break;
+
+            default:
+                seq += instr.make_call(capture_argument<const char *>);
                 break;
         }
 
@@ -146,16 +194,29 @@ void recorder::instrument(clrie::method_info method)
     FunctionID id = method.function_id();
     auto return_type = method.return_type();
     const auto is_static = method.is_static() || method.is_static_constructor();
+    const auto call_event_local = instr.add_local<call_event *>();
+
+    auto ins = code.first_instruction();
+
+    const auto parameters = method.parameters();
+    std::vector<std::string> parameter_types;
+    parameter_types.reserve(parameters.size());
+
+    uint idx = is_static ? 0 : 1;
+    for (auto &p: parameters) {
+        const clrie::type type = p.get(&IMethodParameter::GetType);
+        parameter_types.push_back(type.name());
+        code.insert_before(ins, instr.create_load_arg_instruction(idx++));
+        code.insert_before(ins, capture_argument(instr, type));
+    }
+
     method_infos[id] = {
         method.declaring_type().name(),
         method.name(),
         is_static,
-        return_type.name()
+        return_type.name(),
+        std::move(parameter_types)
     };
-
-    const auto call_event_local = instr.add_local<call_event *>();
-
-    auto ins = code.first_instruction();
 
     // prologue
     code.insert_before(ins, instr.load_constants(id));

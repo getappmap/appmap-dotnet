@@ -95,6 +95,7 @@ namespace appmap {
         }
 
         instruction_sequence create_call_to_string(const clrie::type &type) const noexcept;
+        instruction_sequence capture_value(const clrie::type &type) const noexcept;
 
         template <typename T>
         uint64_t add_local()

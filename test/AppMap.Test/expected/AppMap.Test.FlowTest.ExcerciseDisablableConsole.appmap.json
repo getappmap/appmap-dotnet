@@ -5,6 +5,12 @@
       "event": "call",
       "id": 1,
       "method_id": "Write",
+      "parameters": [
+        {
+          "class": "OBJECT",
+          "value": null
+        }
+      ],
       "static": true
     },
     {
@@ -17,6 +23,12 @@
       "event": "call",
       "id": 3,
       "method_id": "Write",
+      "parameters": [
+        {
+          "class": "OBJECT",
+          "value": "System.Object"
+        }
+      ],
       "static": true
     },
     {
@@ -41,6 +53,12 @@
       "event": "call",
       "id": 7,
       "method_id": "Write",
+      "parameters": [
+        {
+          "class": "OBJECT",
+          "value": "something else"
+        }
+      ],
       "static": true
     },
     {

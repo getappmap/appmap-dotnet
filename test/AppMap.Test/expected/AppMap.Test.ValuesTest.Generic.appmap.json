@@ -5,6 +5,12 @@
       "event": "call",
       "id": 1,
       "method_id": "Generic<!!0>",
+      "parameters": [
+        {
+          "class": "MVAR",
+          "value": "testing"
+        }
+      ],
       "static": true
     },
     {
@@ -21,6 +27,12 @@
       "event": "call",
       "id": 3,
       "method_id": "Generic<!!0>",
+      "parameters": [
+        {
+          "class": "MVAR",
+          "value": null
+        }
+      ],
       "static": true
     },
     {
@@ -37,6 +49,12 @@
       "event": "call",
       "id": 5,
       "method_id": "Generic<!!0>",
+      "parameters": [
+        {
+          "class": "MVAR",
+          "value": "00000000-0000-0000-0000-000000000000"
+        }
+      ],
       "static": true
     },
     {

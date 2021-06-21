@@ -126,3 +126,34 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     return result;
 }
+
+clrie::instruction_factory::instruction_sequence
+appmap::instrumentation::capture_value(const clrie::type &type) const noexcept
+{
+    clrie::instruction_factory::instruction_sequence seq;
+
+    switch (type.cor_element_type()) {
+        case ELEMENT_TYPE_VOID:
+        case ELEMENT_TYPE_I1:
+        case ELEMENT_TYPE_I2:
+        case ELEMENT_TYPE_I4:
+        case ELEMENT_TYPE_I8:
+        case ELEMENT_TYPE_BOOLEAN:
+        case ELEMENT_TYPE_U1:
+        case ELEMENT_TYPE_U2:
+        case ELEMENT_TYPE_U4:
+        case ELEMENT_TYPE_U8:
+        case ELEMENT_TYPE_STRING:
+            // primitive types handled directly
+            break;
+
+        default:
+            // stringify
+            {
+                spdlog::debug("generic capture of value of type {}", type.name());
+                seq += create_call_to_string(type);
+            }
+    }
+
+    return seq;
+}

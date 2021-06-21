@@ -33,6 +33,12 @@
       "event": "call",
       "id": 5,
       "method_id": "set_Uri",
+      "parameters": [
+        {
+          "class": "System.Uri",
+          "value": "http://appmap.test/"
+        }
+      ],
       "static": false
     },
     {

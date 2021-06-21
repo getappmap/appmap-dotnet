@@ -70,8 +70,21 @@ namespace appmap {
 
     void to_json(json &j, const call_event &ev)
     {
-        j = method_infos.at(ev.function);
+        const auto &method = method_infos.at(ev.function);
+        j = method;
         j["event"] = "call";
+        const auto &args = ev.arguments;
+        if (args.empty()) return;
+
+        json params = json::array();
+        auto type = method.parameters.begin();
+        for (const auto &arg: args) {
+            json param;
+            std::visit([&param] (auto &&v) { param["value"] = v; }, arg);
+            param["class"] = *(type++);
+            params.push_back(param);
+        }
+        j["parameters"] = params;
     }
 
     void to_json([[maybe_unused]] json &j, [[maybe_unused]] const appmap::return_event &ev)
