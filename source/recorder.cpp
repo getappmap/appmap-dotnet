@@ -81,7 +81,7 @@ namespace {
         }
     }
 
-    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, uint64_t call_event_local, const clrie::type &return_type)
+    clrie::instruction_factory::instruction_sequence make_return(const instrumentation &instr, uint64_t call_event_local, clrie::type return_type)
     {
         const auto cor_type = return_type.cor_element_type();
 
@@ -140,7 +140,7 @@ namespace {
             arguments.push_back(nullptr);
     }
 
-    clrie::instruction_factory::instruction_sequence capture_argument(const instrumentation &instr, const clrie::type &type)
+    clrie::instruction_factory::instruction_sequence capture_argument(const instrumentation &instr, clrie::type type)
     {
         clrie::instruction_factory::instruction_sequence seq;
 

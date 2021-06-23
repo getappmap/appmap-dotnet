@@ -95,7 +95,11 @@ namespace appmap {
         }
 
         instruction_sequence create_call_to_string(const clrie::type &type) const noexcept;
-        instruction_sequence capture_value(const clrie::type &type) const noexcept;
+
+        // Note capture_value takes a reference; in case of a composite type, it dereferences
+        // it to a primitive that can be then passed onto the correct native function.
+        // The argument is updated to reflect the resulting simple type.
+        instruction_sequence capture_value(clrie::type &type) const noexcept;
 
         template <typename T>
         uint64_t add_local()

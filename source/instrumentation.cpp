@@ -59,6 +59,52 @@ namespace {
         const COR_SIGNATURE *signature = builder.get(&ISignatureBuilder::GetCorSignaturePtr);
         return std::vector<COR_SIGNATURE>(signature, signature + builder.get(&ISignatureBuilder::GetSize));
     }
+
+    bool is_reference(const std::vector<COR_SIGNATURE> &signature) {
+        switch (signature[0]) {
+            case ELEMENT_TYPE_CLASS:
+            case ELEMENT_TYPE_OBJECT:
+                return true;
+            case ELEMENT_TYPE_GENERICINST:
+                return is_reference({signature.begin() + 1, signature.end()});
+        }
+        return false;
+    }
+
+    constexpr ILOrdinalOpcode dereference_instruction(CorElementType type) {
+        switch (type) {
+            case ELEMENT_TYPE_I1: return Cee_Ldind_I1;
+            case ELEMENT_TYPE_I2: return Cee_Ldind_I1;
+            case ELEMENT_TYPE_U2: return Cee_Ldind_U2;
+            case ELEMENT_TYPE_I4: return Cee_Ldind_I4;
+            case ELEMENT_TYPE_U4: return Cee_Ldind_U4;
+            case ELEMENT_TYPE_R4: return Cee_Ldind_R4;
+            case ELEMENT_TYPE_R8: return Cee_Ldind_R8;
+
+            case ELEMENT_TYPE_BOOLEAN:
+            case ELEMENT_TYPE_CHAR:
+            case ELEMENT_TYPE_U1:
+                return Cee_Ldind_U1;
+
+            case ELEMENT_TYPE_U:
+            case ELEMENT_TYPE_I:
+                return Cee_Ldind_I;
+
+            case ELEMENT_TYPE_U8:
+            case ELEMENT_TYPE_I8:
+                return Cee_Ldind_I8;
+
+            default:
+                spdlog::warn("unknown reference type {}, assuming object reference", type);
+                [[fallthrough]];
+
+            case ELEMENT_TYPE_STRING:
+            case ELEMENT_TYPE_OBJECT:
+            case ELEMENT_TYPE_CLASS:
+            case ELEMENT_TYPE_VALUETYPE:
+                return Cee_Ldind_Ref;
+        }
+    }
 }
 
 clrie::instruction_factory::instruction_sequence appmap::instrumentation::create_call_to_string(const clrie::type &type) const noexcept
@@ -69,7 +115,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     const auto signature = signature_of_type(type);
 
-    spdlog::trace("return type signature: {}", signature);
+    spdlog::trace("create_call_to_string, type signature: {}", signature);
 
     try {
         type_token = type.as<ITokenType>().get(&ITokenType::GetToken);
@@ -87,10 +133,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     instruction_sequence result;
 
-    const bool is_ref =
-        signature[0] == ELEMENT_TYPE_CLASS
-        || signature[0] == ELEMENT_TYPE_OBJECT
-        || (signature[0] == ELEMENT_TYPE_GENERICINST && signature[1] == ELEMENT_TYPE_CLASS);
+    const bool is_ref = is_reference(signature);
 
     const bool is_nullable = !is_ref && [&type, &signature]() {
         if (signature[0] != ELEMENT_TYPE_GENERICINST) return false;
@@ -127,7 +170,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 }
 
 clrie::instruction_factory::instruction_sequence
-appmap::instrumentation::capture_value(const clrie::type &type) const noexcept
+appmap::instrumentation::capture_value(clrie::type &type) const noexcept
 {
     clrie::instruction_factory::instruction_sequence seq;
 
@@ -145,6 +188,14 @@ appmap::instrumentation::capture_value(const clrie::type &type) const noexcept
         case ELEMENT_TYPE_STRING:
             // primitive types handled directly
             break;
+
+        case ELEMENT_TYPE_BYREF:
+            {
+                type = type.as<ICompositeType>().get(&ICompositeType::GetRelatedType);
+                seq += create_instruction(dereference_instruction(type.cor_element_type()));
+                seq += capture_value(type);
+                break;
+            }
 
         default:
             // stringify

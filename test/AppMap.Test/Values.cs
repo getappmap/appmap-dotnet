@@ -28,6 +28,16 @@ namespace AppMap.Test
             public static T? Generic<T>(T? v) {
                 return v;
             }
+
+            public static void ByRef(ref Uri? uri, ref bool i) {
+                if (uri is null)
+                    Console.WriteLine("null");
+                else
+                    Console.WriteLine(uri.ToString());
+
+                uri = new Uri("http://appmap.test");
+                i = false;
+            }
         }
     }
 
@@ -68,6 +78,15 @@ namespace AppMap.Test
             Console.WriteLine(Code.Values.Generic("testing"));
             Console.WriteLine(Code.Values.Generic<string>(null));
             Console.WriteLine(Code.Values.Generic(Guid.Empty));
+        }
+
+        [Fact]
+        public void ByRef()
+        {
+            Uri? uri = null;
+            bool i = true;
+            Code.Values.ByRef(ref uri, ref i);
+            Code.Values.ByRef(ref uri, ref i);
         }
     }
 }
