@@ -19,11 +19,15 @@ requires requires(Enum enu, Elt *elt, DWORD dw) {
 }
 auto to_vector(com::ptr<Enum> enu)
 {
-    auto len = enu.get(&Enum::GetCount);
+    const auto len = enu.get(&Enum::GetCount);
     std::vector<com::ptr<Elt>> result(len);
 
-    if (len > 0)
-        com::hresult::check(enu->Next(len, &result[0], &len));
+    unsigned int idx = 0;
+    DWORD count;
+    while (len > idx) {
+        com::hresult::check(enu->Next(len - idx, &result[idx], &count));
+        idx += count;
+    }
 
     return result;
 }
