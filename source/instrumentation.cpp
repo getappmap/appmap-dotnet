@@ -107,8 +107,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
             result += create_token_operand_instruction(Cee_Box, type_token);
         result += {
             create_instruction(Cee_Dup),
-            create_instruction(Cee_Ldnull),
-            create_branch_instruction(Cee_Beq_S, end),
+            create_branch_instruction(Cee_Brfalse, end),
         };
     } else {
         auto local = locals.get(&ILocalVariableCollection::AddLocal, type);
