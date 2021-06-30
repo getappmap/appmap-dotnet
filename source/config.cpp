@@ -11,6 +11,21 @@
 namespace fs = std::filesystem;
 using namespace appmap;
 
+struct config::instrumentation_filter {
+    virtual bool match(
+        clrie::method_info method
+    ) const noexcept
+    {
+        for (const auto &ex: excludes)
+            if (ex->match(method))
+                return false;
+
+        return true;
+    }
+
+    filter_list excludes;
+};
+
 namespace {
     std::optional<std::string> get_envar(const char *name) {
         const auto result = std::getenv(name);
@@ -58,27 +73,114 @@ namespace {
             return find_file("appmap.yml", basepath);
     }
 
-    void load_config(appmap::config &c, const YAML::Node &config_file) {
-        if (const auto &pkgs = config_file["packages"]) {
-            for (const auto &pkg: pkgs) {
-                if (pkg.IsScalar()) {
-                    c.classes.push_back(pkg.as<std::string>());
-                    continue;
-                } else if (pkg.IsMap()) {
-                    if (const auto &mod = pkg["module"]) {
-                        c.modules.push_back(mod.as<std::string>());
-                        continue;
-                    } else if (const auto &cls = pkg["class"]) {
-                        c.classes.push_back(cls.as<std::string>());
-                        continue;
-                    } else if (const auto &path = pkg["path"]) {
-                        c.paths.push_back(path.as<std::string>());
-                        continue;
-                    }
-                }
-                spdlog::warn("unrecognized package specification in config file: {}", pkg);
-            }
+    struct module_name_filter : config::instrumentation_filter {
+        std::string name;
+
+        module_name_filter(std::string filter): name(std::move(filter)) {}
+
+        bool match(
+            clrie::method_info method
+        ) const noexcept override
+        {
+            return method.module_info().module_name() == name
+                && instrumentation_filter::match(method);
         }
+    };
+
+    struct module_path_filter : config::instrumentation_filter {
+        fs::path path;
+
+        module_path_filter(fs::path filter): path(std::move(filter)) {}
+
+        bool match(
+            clrie::method_info method
+        ) const noexcept override
+        {
+            const fs::path module_path = method.module_info().full_path();
+
+            if (const auto &[end, _] = std::mismatch(path.begin(), path.end(), module_path.begin()); end == path.end())
+                return instrumentation_filter::match(method);
+
+            return false;
+        }
+    };
+
+    struct name_filter : config::instrumentation_filter {
+        std::string name;
+
+        name_filter(std::string filter): name(std::move(filter)) {}
+
+        bool match(
+            clrie::method_info method
+        ) const noexcept override
+        {
+            const auto full_name = method.full_name();
+            const auto len = name.length();
+
+            if (len > full_name.length()) return false;
+
+            if (full_name.rfind(name, 0) == 0 && (
+                full_name.length() == len ||
+                full_name[len] == '.'
+            ))
+                return instrumentation_filter::match(method);
+
+            return false;
+        }
+    };
+
+    fs::path resolve(const fs::path &path, const fs::path &base) {
+        if (!path.is_relative())
+            return path;
+        fs::path res = fs::weakly_canonical(base / path);
+        if (res.filename().empty())
+            res = res.parent_path();
+        return res;
+    }
+
+    config::filter_list load_filters(
+        const YAML::Node &pkgs,
+        const fs::path &base_path,
+        std::string prefix = ""
+    ) {
+        config::filter_list result;
+
+        for (const auto &pkg: pkgs) {
+            if (pkg.IsScalar()) {
+                const auto name = pkg.as<std::string>();
+                result.emplace_back(std::make_unique<name_filter>(prefix + name));
+                continue;
+            } else if (pkg.IsMap()) {
+                std::string new_prefix = prefix;
+
+                if (const auto &mod = pkg["module"]) {
+                    const auto name = mod.as<std::string>();
+                    result.emplace_back(std::make_unique<module_name_filter>(name));
+                } else if (const auto &cls = pkg["class"]) {
+                    const auto name = cls.as<std::string>();
+                    result.emplace_back(std::make_unique<name_filter>(prefix + name));
+                    new_prefix += name + ".";
+                } else if (const auto &path = pkg["path"]) {
+                    const auto p = resolve(path.as<std::string>(), base_path);
+                    result.emplace_back(std::make_unique<module_path_filter>(p));
+                }
+
+                if (const auto &exc = pkg["exclude"])
+                    result.back()->excludes = load_filters(exc, base_path, new_prefix);
+
+                continue;
+            }
+            spdlog::warn("unrecognized package specification in config file: {}", pkg);
+        }
+
+        return std::move(result);
+    }
+
+
+    void load_config(appmap::config &c, const YAML::Node &config_file)
+    {
+        if (const auto &pkgs = config_file["packages"])
+            c.filters = load_filters(pkgs, c.base_path);
     }
 
     appmap::config load_default()
@@ -106,14 +208,6 @@ namespace {
         }
 
         return c;
-    }
-
-    fs::path resolve(const fs::path &path, const fs::path &base) {
-        assert(path.is_relative());
-        fs::path res = fs::weakly_canonical(base / path);
-        if (res.filename().empty())
-            res = res.parent_path();
-        return res;
     }
 
     std::string sanitize_filename(const std::string &name)
@@ -144,31 +238,9 @@ appmap::config & appmap::config::instance()
 
 bool appmap::config::should_instrument(clrie::method_info method)
 {
-    const auto module = method.module_info();
-    const std::string module_name = module.get(&IModuleInfo::GetModuleName);
-
-    if (std::find(modules.begin(), modules.end(), module_name) != modules.end())
-        return true;
-
-    const fs::path module_path = std::string(module.get(&IModuleInfo::GetFullPath));
-
-    for (fs::path &p: paths) {
-        if (p.is_relative())
-            p = resolve(p, base_path);
-        if (const auto &[end, _] = std::mismatch(p.begin(), p.end(), module_path.begin()); end == p.end())
+    for (const auto &f: filters)
+        if (f->match(method))
             return true;
-    }
-
-    const auto full_name = method.full_name();
-
-    for (const auto &cls: classes) {
-        if (cls.length() > full_name.length()) continue;
-        if (full_name.rfind(cls, 0) == 0 && (
-            full_name.length() == cls.length() ||
-            full_name[cls.length()] == '.'
-        ))
-            return true;
-    }
 
     return false;
 }
@@ -304,6 +376,15 @@ TEST_CASE("method matching")
             load_config(c, YAML::Load("packages: [Extinction.Rebellion]"));
         }
 
+        SUBCASE("with exceptions") {
+            load_config(c, YAML::Load("packages: [{class: Extinction.Rebellion, exclude: [Strike]}]"));
+
+            Method(method, GetFullName) = "Extinction.Rebellion.Strike";
+            CHECK(not c.should_instrument(&method.get()));
+
+            Method(method, GetFullName) = "Extinction.Rebellion.Protest";
+        }
+
         CHECK(c.should_instrument(&method.get()));
 
         Method(method, GetFullName) = "Extinction.Rebellions.Protest";
@@ -317,8 +398,8 @@ TEST_CASE("method matching")
         }
 
         SUBCASE("relative") {
-            load_config(c, YAML::Load("packages: [path: .]"));
             c.base_path = "/src/xr";
+            load_config(c, YAML::Load("packages: [path: .]"));
         }
 
         CHECK(c.should_instrument(&method.get()));
