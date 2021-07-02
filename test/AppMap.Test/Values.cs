@@ -4,6 +4,10 @@ using Xunit;
 namespace AppMap.Test
 {
     namespace Code {
+        public struct AStruct {
+            public int field;
+        }
+
         public class Values {
             public static string? NullableString(bool giveValue) {
                 if (giveValue)
@@ -37,6 +41,14 @@ namespace AppMap.Test
 
                 uri = new Uri("http://appmap.test");
                 i = false;
+            }
+
+            public static void TakesStruct(AStruct s) {
+                Console.WriteLine(s);
+            }
+
+            public static void StructRef(ref AStruct s) {
+                Console.WriteLine(s);
             }
         }
     }
@@ -87,6 +99,14 @@ namespace AppMap.Test
             bool i = true;
             Code.Values.ByRef(ref uri, ref i);
             Code.Values.ByRef(ref uri, ref i);
+        }
+
+        [Fact]
+        public void Struct()
+        {
+            var s = new Code.AStruct{field = 5};
+            Code.Values.TakesStruct(s);
+            Code.Values.StructRef(ref s);
         }
     }
 }

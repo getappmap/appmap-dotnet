@@ -143,9 +143,11 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     const bool is_mvar = signature[0] == ELEMENT_TYPE_MVAR;
 
+    const bool is_obj = is_ref || is_nullable || is_mvar || signature[0] == ELEMENT_TYPE_VALUETYPE;
+
     auto end = create_instruction(Cee_Nop); // just to have a place to branch to
 
-    if (is_nullable || is_ref || is_mvar) { // add check for null
+    if (is_obj) { // add check for null
         if (!is_ref) // boxing a Nullable will automatically pull the null ref
             result += create_token_operand_instruction(Cee_Box, type_token);
         result += {
@@ -163,7 +165,7 @@ clrie::instruction_factory::instruction_sequence appmap::instrumentation::create
 
     result += create_token_operand_instruction(Cee_Callvirt, object_to_string_refs[module_id]);
 
-    if (is_nullable || is_ref || is_mvar)
+    if (is_obj)
         result += end;
 
     return result;

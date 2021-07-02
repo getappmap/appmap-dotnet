@@ -1,0 +1,40 @@
+{
+  "events": [
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 1,
+      "method_id": "TakesStruct",
+      "parameters": [
+        {
+          "class": "AppMap.Test.Code.AStruct",
+          "value": "AppMap.Test.Code.AStruct"
+        }
+      ],
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 3,
+      "method_id": "StructRef",
+      "parameters": [
+        {
+          "class": "BYREF",
+          "value": "AppMap.Test.Code.AStruct"
+        }
+      ],
+      "static": true
+    },
+    {
+      "event": "return",
+      "id": 4,
+      "parent_id": 3
+    }
+  ]
+}
