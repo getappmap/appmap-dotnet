@@ -22,11 +22,11 @@ auto to_vector(com::ptr<Enum> enu)
     const auto len = enu.get(&Enum::GetCount);
     std::vector<com::ptr<Elt>> result(len);
 
-    unsigned int idx = 0;
-    DWORD count;
-    while (len > idx) {
-        com::hresult::check(enu->Next(len - idx, &result[idx], &count));
-        idx += count;
+    for (unsigned int i = 0; i < len; i++) {
+        DWORD count;
+        // For some reason trying to get more than one at a time
+        // leads to wrong results.
+        com::hresult::check(enu->Next(1, &result[i], &count));
     }
 
     return result;
