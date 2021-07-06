@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <unordered_set>
 
 #include "clrie/instrumentation_method.h"
@@ -7,14 +8,12 @@
 
 #include "config.h"
 #include "recorder.h"
-#include "test_framework.h"
 
 namespace appmap {
     struct instrumentation_method : public clrie::instrumentation_method<instrumentation_method>
     {
         std::unordered_set<std::string> modules;
         appmap::config &config = appmap::config::instance();
-        appmap::test_framework test_framework;
         com::ptr<IProfilerManager> profiler_manager;
 
         void initialize(com::ptr<IProfilerManager> manager);
@@ -23,4 +22,7 @@ namespace appmap {
         void on_module_loaded(clrie::module_info module);
         void on_shutdown();
     };
+
+    using hook = bool (*)(const clrie::method_info &);
+    hook add_hook(const std::string &method_name, hook handler);
 }

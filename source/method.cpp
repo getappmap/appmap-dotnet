@@ -35,29 +35,41 @@ void appmap::instrumentation_method::on_shutdown()
     }
 }
 
+namespace {
+    auto &hooks() {
+        static std::map<std::string, hook> hooks;
+        return hooks;
+    }
+}
+
 bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method, bool is_rejit)
 {
-    bool result = [&](){
-        if (is_rejit) return false;
+    if (is_rejit) return false;
 
-        return test_framework.should_instrument(method) || config.should_instrument(method);
-    }();
+    auto name = method.full_name();
 
-    // spdlog::trace("should_instrument_method({}, {}) -> {}", method.full_name(), is_rejit, result);
-
-    return result;
+    return hooks().count(std::move(name)) || config.should_instrument(method);
 }
 
 void appmap::instrumentation_method::instrument_method(clrie::method_info method, [[maybe_unused]] bool is_rejit)
 {
-    spdlog::trace("instrument_method({}, {})", method.full_name(), is_rejit);
+    const auto &name = method.full_name();
 
-    if (test_framework.instrument(method))
-        return;
+    spdlog::trace("instrument_method({}, {})", name, is_rejit);
+
+    if (const auto &hs = hooks(); hs.count(name)) {
+        if (hs.at(name)(method)) return;
+    }
 
     recorder::instrument(method);
     spdlog::trace("instrument_method({}, {}) finished", method.full_name(), is_rejit);
 }
+
+hook appmap::add_hook(const std::string &method_name, hook handler)
+{
+    return hooks()[method_name] = handler;
+}
+
 
 // This creates a test registry so that a build with tests enabled
 // can still be used as an instrumentation DLL, not only linked
