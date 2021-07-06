@@ -11,6 +11,12 @@ constexpr GUID com::guid_of<IMetaDataEmit>() noexcept {
 }
 
 template<>
+constexpr GUID com::guid_of<IMetaDataAssemblyEmit>() noexcept {
+    using namespace com::literals;
+    return "{211EF15B-5317-4438-B196-DEC87B887693}"_guid;
+}
+
+template<>
 constexpr GUID com::guid_of<IMetaDataImport>() noexcept {
     using namespace com::literals;
     return "{7DAC8207-D3AE-4c75-9B67-92801A497D44}"_guid;
@@ -56,8 +62,8 @@ namespace clrie {
         com::ptr<IMetaDataEmit> meta_data_emit() const {
             return get(&interface_type::GetMetaDataEmit).as<IMetaDataEmit>();
         }
-        com::ptr<IUnknown> meta_data_assembly_emit() const {
-            return get(&interface_type::GetMetaDataAssemblyEmit);
+        com::ptr<IMetaDataAssemblyEmit> meta_data_assembly_emit() const {
+            return get(&interface_type::GetMetaDataAssemblyEmit).as<IMetaDataAssemblyEmit>();
         }
 
         ModuleID module_id() const {
