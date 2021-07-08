@@ -183,13 +183,13 @@ std::string appmap::generate(const appmap::recording &events, bool generate_clas
 TEST_CASE("basic generation") {
     appmap::recording events;
 
-    events.push_back(std::make_unique<call_event>(42));
-    events.push_back(std::make_unique<call_event>(43));
+    events.push_back(std::make_unique<call_event>(0));
+    events.push_back(std::make_unique<call_event>(1));
     events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[1].get()), uint64_t{42}));
     events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[0].get()), int64_t{-31337}));
 
-    method_infos[42] = { "Some.Class", "Method", false, "I8" };
-    method_infos[43] = { "Some.Class", "OtherMethod", true, "U4" };
+    method_infos.push_back({ "Some.Class", "Method", false, "I8" });
+    method_infos.push_back({ "Some.Class", "OtherMethod", true, "U4" });
 
     CHECK(json::parse(generate(events, true)) == R"(
         {

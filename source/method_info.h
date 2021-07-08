@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 
 #include <cor.h>
 #include <corprof.h>
@@ -16,5 +15,5 @@ namespace appmap {
         std::vector<std::string> parameters{};
     };
 
-    inline std::unordered_map<FunctionID, method_info> method_infos;
+    inline std::vector<method_info> method_infos;
 }

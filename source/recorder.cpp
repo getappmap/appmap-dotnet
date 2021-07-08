@@ -191,7 +191,6 @@ void recorder::instrument(clrie::method_info method)
     clrie::instruction_graph code = method.instructions();
     instrumentation instr(method);
 
-    FunctionID id = method.function_id();
     auto return_type = method.return_type();
     const auto is_static = method.is_static() || method.is_static_constructor();
     const auto call_event_local = instr.add_local<call_event *>();
@@ -210,16 +209,8 @@ void recorder::instrument(clrie::method_info method)
         code.insert_before(ins, capture_argument(instr, type));
     }
 
-    method_infos[id] = {
-        method.declaring_type().name(),
-        method.name(),
-        is_static,
-        return_type.name(),
-        std::move(parameter_types)
-    };
-
     // prologue
-    code.insert_before(ins, instr.load_constants(id));
+    code.insert_before(ins, instr.load_constants(method_infos.size()));
     code.insert_before(ins, instr.make_call(&method_called));
     code.insert_before(ins, instr.create_store_local_instruction(call_event_local));
 
@@ -239,4 +230,12 @@ void recorder::instrument(clrie::method_info method)
             code.insert_before_and_retarget_offsets(ins, make_return(instr, call_event_local, return_type));
         }
     }
+
+    method_infos.push_back({
+        method.declaring_type().name(),
+        method.name(),
+        is_static,
+        return_type.name(),
+        std::move(parameter_types)
+    });
 }
