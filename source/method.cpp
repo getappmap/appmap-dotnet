@@ -1,6 +1,8 @@
 #include <spdlog/spdlog.h>
 #include <string>
 
+#include <utf8.h>
+
 #include "generation.h"
 #include "method.h"
 #include "instrumentation.h"
@@ -13,13 +15,6 @@ void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manag
     spdlog::debug("initialize()");
     profiler_manager = manager;
     instrumentation::signature_builder = manager.get(&IProfilerManager::CreateSignatureBuilder);
-}
-
-void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
-{
-    const auto name = module.module_name();
-    // spdlog::debug("on_module_loaded({})", name);
-    modules.insert(name);
 }
 
 void appmap::instrumentation_method::on_shutdown()
@@ -40,12 +35,15 @@ namespace {
         static std::map<std::string, hook> hooks;
         return hooks;
     }
+
+    auto &requested_rejits() {
+        static std::map<std::string, std::vector<std::string>> rejits;
+        return rejits;
+    }
 }
 
-bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method, bool is_rejit)
+bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method, [[maybe_unused]] bool is_rejit)
 {
-    if (is_rejit) return false;
-
     auto name = method.full_name();
 
     return hooks().count(std::move(name)) || config.should_instrument(method);
@@ -65,8 +63,32 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
     spdlog::trace("instrument_method({}, {}) finished", method.full_name(), is_rejit);
 }
 
+void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
+{
+    const auto name = module.module_name();
+    modules.insert(name);
+
+    if (const auto &rejits = requested_rejits(); rejits.count(name)) {
+        const auto md = module.meta_data_import();
+        for (const auto &method: rejits.at(name)) {
+            const auto dot = method.find_last_of('.');
+            const auto type = md.get(&IMetaDataImport::FindTypeDefByName, utf8::utf8to16(method.substr(0, dot)).c_str(), 0);
+            const auto function = md.get(&IMetaDataImport::FindMethod, type, utf8::utf8to16(method.substr(dot + 1)).c_str(), nullptr, 0);
+
+            spdlog::debug("requesting rejit of {} in {}", method, name);
+            module.request_rejit(function);
+        }
+    }
+}
+
 hook appmap::add_hook(const std::string &method_name, hook handler)
 {
+    return hooks()[method_name] = handler;
+}
+
+hook appmap::add_hook(const std::string &method_name, const std::string &module_name, hook handler)
+{
+    requested_rejits()[module_name].push_back(method_name);
     return hooks()[method_name] = handler;
 }
 

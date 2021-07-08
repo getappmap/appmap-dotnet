@@ -25,4 +25,5 @@ namespace appmap {
 
     using hook = bool (*)(const clrie::method_info &);
     hook add_hook(const std::string &method_name, hook handler);
+    hook add_hook(const std::string &method_name, const std::string &module_name, hook handler);
 }
