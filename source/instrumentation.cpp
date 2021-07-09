@@ -209,3 +209,30 @@ appmap::instrumentation::capture_value(clrie::type &type) const noexcept
 
     return seq;
 }
+
+mdToken appmap::instrumentation::type_reference(const char16_t *assembly, const char16_t *type)
+{
+    constexpr USHORT any_version = -1;
+    constexpr ASSEMBLYMETADATA any_metadata = {
+        any_version, any_version, any_version, any_version,
+        nullptr, 0, nullptr, 0, nullptr, 0
+    };
+
+    const auto assemblyRef = module.meta_data_assembly_emit().get(
+        &IMetaDataAssemblyEmit::DefineAssemblyRef,
+        nullptr, 0, assembly, &any_metadata, nullptr, 0, 0
+    );
+    return metadata.get(
+        &IMetaDataEmit::DefineTypeRefByName,
+        assemblyRef, type
+    );
+}
+
+mdToken appmap::instrumentation::member_reference(const char16_t *assembly,
+    const char16_t *type, const char16_t *member, gsl::span<const COR_SIGNATURE> signature)
+{
+    return metadata.get(
+        &IMetaDataEmit::DefineMemberRef, type_reference(assembly, type),
+        member, signature.data(), signature.size()
+    );
+}

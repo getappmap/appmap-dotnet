@@ -108,6 +108,11 @@ namespace appmap {
             return locals.get(&ILocalVariableCollection::AddLocal, t);
         }
 
+        // emit metadata and return reference tokens
+        mdToken type_reference(const char16_t *assembly, const char16_t *type);
+        mdToken member_reference(const char16_t *assembly, const char16_t *type,
+            const char16_t *member, gsl::span<const COR_SIGNATURE> signature);
+
     protected:
         instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;
     };

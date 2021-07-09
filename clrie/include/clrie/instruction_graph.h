@@ -10,7 +10,7 @@ namespace clrie {
         struct iterator: com::ptr<IInstruction>
         {
             using ptr::ptr;
-            iterator(ptr &&other): ptr(other) {}
+            iterator(ptr other): ptr(std::move(other)) {}
 
             iterator &operator++() {
                 iterator next;
@@ -71,7 +71,9 @@ namespace clrie {
 
         // Insert an instruction after another instruction. jmp offsets that point to the next instruction after
         // the other instruction are not updated to reflect this change
-        void insert_after(iterator instruction_orig, com::ptr<IInstruction> instruction_new);
+        void insert_after(iterator instruction_orig, com::ptr<IInstruction> instruction_new) {
+            com::hresult::check(ptr_->InsertAfter(instruction_orig, instruction_new));
+        }
 
         // Insert an instruction before another instruction AND update jmp targets and exception ranges that used
         // to point to the old instruction to point to the new instruction.
@@ -102,7 +104,9 @@ namespace clrie {
 
         // Remove all instructions from the current graph. The original instructions are still accessible from the original first and original last
         // methods. These are all marked deleted  and their original next fields are still set.
-        void remove_all();
+        void remove_all() {
+            com::hresult::check(ptr_->RemoveAll());
+        }
 
         // Removes all existing instructions from the graph and replaces them with a complete method body. The original instructions are preserved in a disjoint
         // graph. Note that this changes the behavior of API's such as GetInstructionAtOriginalOffset; these will now retrieve the baseline instruction instead.
