@@ -5,6 +5,8 @@
 #include <typeinfo>
 #include <variant>
 
+#include <nlohmann/json_fwd.hpp>
+
 #include <corprof.h>
 
 namespace appmap {
@@ -15,21 +17,26 @@ namespace appmap {
             return typeid(*this) == typeid(other);
         }
         virtual ~event() {}
+        virtual operator nlohmann::json() const = 0;
     };
 
-    struct call_event: event {
+    struct call_event: event {};
+
+    struct function_call_event: call_event {
         FunctionID function;
         std::vector<cor_value> arguments;
 
-        call_event(FunctionID fun, std::vector<cor_value> &&args = {}):
+        function_call_event(FunctionID fun, std::vector<cor_value> &&args = {}):
             function(fun), arguments(std::move(args)) {}
 
         bool operator==(const event &other) const noexcept override {
-            if (!event::operator==(other))
+            if (!call_event::operator==(other))
                 return false;
 
-            return function == static_cast<const call_event &>(other).function;
+            return function == static_cast<const function_call_event &>(other).function;
         }
+
+        operator nlohmann::json() const override;
     };
 
     struct return_event: event {
@@ -46,5 +53,7 @@ namespace appmap {
             const auto &other_ret = static_cast<const return_event &>(other);
             return call == other_ret.call && value == other_ret.value;
         }
+
+        operator nlohmann::json() const override;
     };
 }

@@ -38,8 +38,8 @@ namespace {
         classmap::classmap map;
 
         for (const method_info &method: rec
-            | remove_if([](const auto &ev) { return typeid(*ev) != typeid(call_event); })
-            | transform([](const auto &ev) { return static_cast<const call_event &>(*ev).function; }) | unique
+            | remove_if([](const auto &ev) { return typeid(*ev) != typeid(function_call_event); })
+            | transform([](const auto &ev) { return static_cast<const function_call_event &>(*ev).function; }) | unique
             | transform([](const FunctionID fun) { return method_infos.at(fun); }))
         {
             classmap::code_container *code = &map;
@@ -68,13 +68,14 @@ namespace appmap {
         j["static"] = m.is_static;
     }
 
-    void to_json(json &j, const call_event &ev)
+    function_call_event::operator json() const
     {
-        const auto &method = method_infos.at(ev.function);
+        json j;
+        const auto &method = method_infos.at(function);
         j = method;
         j["event"] = "call";
-        const auto &args = ev.arguments;
-        if (args.empty()) return;
+        const auto &args = arguments;
+        if (args.empty()) return j;
 
         json params = json::array();
         auto type = method.parameters.begin();
@@ -85,16 +86,24 @@ namespace appmap {
             params.push_back(param);
         }
         j["parameters"] = params;
+
+        return j;
     }
 
-    void to_json([[maybe_unused]] json &j, [[maybe_unused]] const appmap::return_event &ev)
+    return_event::operator json() const
     {
+        json j;
+
         j["event"] = "return";
-        if (ev.value) {
-            const auto &method = method_infos.at(ev.call->function);
-            auto &rv = j["return_value"] = { { "class", method.return_type } };
-            std::visit([&rv] (auto &&arg) { rv["value"] = arg; }, *ev.value);
+        if (value) {
+            auto &rv = j["return_value"] = {};
+            if (const auto call_fun = dynamic_cast<const function_call_event *>(call)) {
+                rv["class"] = method_infos.at(call_fun->function).return_type;
+            }
+            std::visit([&rv] (auto &&arg) { rv["value"] = arg; }, *value);
         }
+
+        return j;
     }
 
     struct generation_visitor {
@@ -118,11 +127,10 @@ namespace appmap {
         }
 
         void operator()(const event &ev) {
-            const auto &t = typeid(ev);
-            if (t == typeid(call_event)) {
-                operator()(static_cast<const call_event &>(ev));
-            } else if (t == typeid(return_event)) {
-                operator()(static_cast<const return_event &>(ev));
+            if (const auto call = dynamic_cast<const call_event *>(&ev)) {
+                operator()(*call);
+            } else if (const auto ret = dynamic_cast<const return_event *>(&ev)) {
+                operator()(*ret);
             } else {
                 assert(false && "unexpected event type");
             }
@@ -183,10 +191,10 @@ std::string appmap::generate(const appmap::recording &events, bool generate_clas
 TEST_CASE("basic generation") {
     appmap::recording events;
 
-    events.push_back(std::make_unique<call_event>(0));
-    events.push_back(std::make_unique<call_event>(1));
-    events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[1].get()), uint64_t{42}));
-    events.push_back(std::make_unique<return_event>(static_cast<call_event *>(events[0].get()), int64_t{-31337}));
+    events.push_back(std::make_unique<function_call_event>(0));
+    events.push_back(std::make_unique<function_call_event>(1));
+    events.push_back(std::make_unique<return_event>(static_cast<function_call_event *>(events[1].get()), uint64_t{42}));
+    events.push_back(std::make_unique<return_event>(static_cast<function_call_event *>(events[0].get()), int64_t{-31337}));
 
     method_infos.push_back({ "Some.Class", "Method", false, "I8" });
     method_infos.push_back({ "Some.Class", "OtherMethod", true, "U4" });

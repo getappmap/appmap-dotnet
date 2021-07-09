@@ -23,13 +23,13 @@ namespace {
             const auto &method_info = method_infos.at(id);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        auto event = std::make_unique<call_event>(id, std::exchange(arguments, {}));
+        auto event = std::make_unique<function_call_event>(id, std::exchange(arguments, {}));
         auto ptr = event.get();
         recorder::events.push_back(std::move(event));
         return ptr;
     }
 
-    void method_returned_void(const call_event *call)
+    void method_returned_void(const function_call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
         if (spdlog::get_level() >= spdlog::level::trace && call) {
@@ -40,7 +40,7 @@ namespace {
     }
 
     template <typename T>
-    void method_returned(T return_value, const call_event *call)
+    void method_returned(T return_value, const function_call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
         if (spdlog::get_level() >= spdlog::level::trace && call) {
@@ -51,7 +51,7 @@ namespace {
     }
 
     template <>
-    void method_returned<const char *>(const char *return_value, const call_event *call)
+    void method_returned<const char *>(const char *return_value, const function_call_event *call)
     {
         std::lock_guard lock(appmap::recorder::mutex);
         if (spdlog::get_level() >= spdlog::level::trace && call) {
@@ -193,7 +193,7 @@ void recorder::instrument(clrie::method_info method)
 
     auto return_type = method.return_type();
     const auto is_static = method.is_static() || method.is_static_constructor();
-    const auto call_event_local = instr.add_local<call_event *>();
+    const auto call_event_local = instr.add_local<function_call_event *>();
 
     auto ins = code.first_instruction();
 
