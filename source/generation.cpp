@@ -106,6 +106,26 @@ namespace appmap {
         return j;
     }
 
+    http_request_event::operator json() const
+    {
+        json j;
+        j["event"] = "call";
+        j["http_server_request"] = {
+            { "request_method", meth },
+            { "path_info", path }
+        };
+        return j;
+    }
+
+    http_response_event::operator json() const
+    {
+        auto j = return_event::operator json();
+        j["http_server_response"] = {
+            { "status_code", status }
+        };
+        return j;
+    }
+
     struct generation_visitor {
         json &events;
         using id_t = uint;
@@ -188,6 +208,14 @@ std::string appmap::generate(const appmap::recording &events, bool generate_clas
     return result.dump(2);
 }
 
+namespace doctest {
+    template<> struct StringMaker<json> {
+        static String convert(const json& value) {
+            return value.dump(4).c_str();
+        }
+    };
+}
+
 TEST_CASE("basic generation") {
     appmap::recording events;
 
@@ -256,4 +284,28 @@ TEST_CASE("basic generation") {
                 }
             ]
         })"_json);
+}
+
+TEST_CASE("http events generation") {
+    appmap::recording events;
+    events.push_back(std::make_unique<http_request_event>("POST", "/test"));
+    events.push_back(std::make_unique<http_response_event>(static_cast<call_event *>(events[0].get()), 409));
+    CHECK(json::parse(generate(events, false)) == R"({"events": [
+        {
+            "id": 1,
+            "event": "call",
+            "http_server_request": {
+                "path_info": "/test",
+                "request_method": "POST"
+            }
+        },
+        {
+            "id": 2,
+            "event": "return",
+            "parent_id": 1,
+            "http_server_response": {
+                "status_code": 409
+            }
+        }
+    ]})"_json);
 }

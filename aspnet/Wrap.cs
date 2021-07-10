@@ -15,12 +15,12 @@ namespace AppMap {
             };
         }
 
-        private static int HttpRequest(string method, string pathInfo) {
+        private static nuint HttpRequest(string method, string pathInfo) {
             // stub
             return 42;
         }
 
-        private static void HttpResponse(int parentId, int status) {
+        private static void HttpResponse(nuint parentId, int status) {
             // stub
         }
     }

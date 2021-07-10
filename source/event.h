@@ -7,8 +7,6 @@
 
 #include <nlohmann/json_fwd.hpp>
 
-#include <corprof.h>
-
 namespace appmap {
     using cor_value = std::variant<std::string, uint64_t, int64_t, bool, nullptr_t>;
 
@@ -23,10 +21,10 @@ namespace appmap {
     struct call_event: event {};
 
     struct function_call_event: call_event {
-        FunctionID function;
+        size_t function;
         std::vector<cor_value> arguments;
 
-        function_call_event(FunctionID fun, std::vector<cor_value> &&args = {}):
+        function_call_event(size_t fun, std::vector<cor_value> &&args = {}):
             function(fun), arguments(std::move(args)) {}
 
         bool operator==(const event &other) const noexcept override {
@@ -35,6 +33,16 @@ namespace appmap {
 
             return function == static_cast<const function_call_event &>(other).function;
         }
+
+        operator nlohmann::json() const override;
+    };
+
+    struct http_request_event: call_event {
+        std::string meth;
+        std::string path;
+
+        http_request_event(std::string method, std::string path_info):
+            meth(std::move(method)), path(std::move(path_info)) {}
 
         operator nlohmann::json() const override;
     };
@@ -53,6 +61,15 @@ namespace appmap {
             const auto &other_ret = static_cast<const return_event &>(other);
             return call == other_ret.call && value == other_ret.value;
         }
+
+        operator nlohmann::json() const override;
+    };
+
+    struct http_response_event: return_event {
+        int status;
+
+        http_response_event(const call_event *call_ev, int status_code):
+            return_event(call_ev), status(status_code) {}
 
         operator nlohmann::json() const override;
     };

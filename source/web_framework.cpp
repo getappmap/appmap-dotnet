@@ -1,15 +1,9 @@
+#include "event.h"
 #include "instrumentation.h"
 #include "method.h"
+#include "recorder.h"
 
 #include <spdlog/spdlog.h>
-
-namespace {
-    constexpr USHORT any_version = -1;
-    constexpr ASSEMBLYMETADATA any_metadata = {
-        any_version, any_version, any_version, any_version,
-        nullptr, 0, nullptr, 0, nullptr, 0
-    };
-}
 
 namespace appmap { namespace web_framework {
     auto asp_net_build = add_hook(
@@ -38,9 +32,11 @@ namespace appmap { namespace web_framework {
             return true;
         });
 
-    int request(const char *method, const char *path_info) {
-        spdlog::info("request({}, {})", method, path_info);
-        return 31337;
+    auto request(const char *method, const char *path_info) {
+        auto call = std::make_unique<http_request_event>(method, path_info);
+        call_event *ptr = call.get();
+        recorder::events.push_back(std::move(call));
+        return ptr;
     }
 
     auto request_hook = add_hook(
@@ -60,8 +56,8 @@ namespace appmap { namespace web_framework {
             return true;
         });
 
-    void response(int parent, int code) {
-        spdlog::info("response({}, {})", parent, code);
+    void response(const call_event *parent, int code) {
+        recorder::events.push_back(std::make_unique<http_response_event>(parent, code));
     }
 
     auto response_hook = add_hook(
