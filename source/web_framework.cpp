@@ -92,7 +92,12 @@ namespace appmap { namespace web_framework {
                     ldftn{ResponseWrapperInvoke},
                     newobj{instr.member_reference(ActionTask, u".ctor", sig::method(sig::Void, {sig::object, sig::native_int}))},
 
-                    callvirt{instr.member_reference(Task, u"ContinueWith", sig::method(Task, {sig::generic(Action, {Task})}))}
+                    ldc(0x80000), // TaskContinuationOptions.ExecuteSynchronously
+                    callvirt{instr.member_reference(Task, u"ContinueWith",
+                        sig::method(Task, {
+                            sig::generic(Action, {Task}),
+                            sig::value{instr.type_reference(SystemRuntime, u"System.Threading.Tasks.TaskContinuationOptions")}
+                        }))}
                 });
 
             spdlog::trace("request wrappers defined");
