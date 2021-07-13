@@ -16,8 +16,16 @@ struct compiler {
         return *this;
     }
 
-    void operator()(ldarg arg) {
+    void operator()(ops::ldarg arg) {
         insns += factory.create_load_arg_instruction(arg.index);
+    }
+
+    void operator()(ops::ldloc arg) {
+        insns += factory.create_load_local_instruction(arg.index);
+    }
+
+    void operator()(ops::stloc arg) {
+        insns += factory.create_store_local_instruction(arg.index);
     }
 
     void operator()(token_op op) {

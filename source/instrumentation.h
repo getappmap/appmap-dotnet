@@ -9,6 +9,7 @@
 #include <corhdr.h>
 
 #include "cil.h"
+#include "signature.h"
 
 namespace appmap {
     template <typename T>
@@ -134,12 +135,27 @@ namespace appmap {
 
         mdTypeDef define_type(const char16_t *name);
         mdFieldDef define_field(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature);
-        mdMethodDef define_method(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature, std::vector<cil::instruction> code);
+
+        mdMethodDef define_method(
+            mdTypeDef type,
+            const char16_t *name,
+            gsl::span<const COR_SIGNATURE> signature,
+            std::initializer_list<appmap::signature::type> locals,
+            std::vector<cil::instruction> code
+        );
+
+        mdMethodDef define_method(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature, std::vector<cil::instruction> code) {
+            return define_method(type, name, signature, {}, std::move(code));
+        }
 
         template <class Ret, class... Args>
         mdTypeSpec native_type(Ret (*)(Args...)) {
             constexpr auto sig = func_traits<Ret(*)(Args...)>::signature;
             return metadata.get(&IMetaDataEmit::GetTokenFromSig, sig.data(), sig.size());
+        }
+
+        mdTypeSpec type_token(gsl::span<const COR_SIGNATURE> sig) {
+            return metadata.get(&IMetaDataEmit::GetTokenFromTypeSpec, sig.data(), sig.size());
         }
 
     protected:

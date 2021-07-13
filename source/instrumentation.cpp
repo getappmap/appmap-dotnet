@@ -253,11 +253,18 @@ mdFieldDef appmap::instrumentation::define_field(mdTypeDef type, const char16_t 
     return metadata.get(&IMetaDataEmit::DefineField, type, name, 0, signature.data(), signature.size(), ELEMENT_TYPE_END, nullptr, 0);
 }
 
-mdMethodDef appmap::instrumentation::define_method(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature, std::vector<appmap::cil::instruction> code)
-{
+mdMethodDef appmap::instrumentation::define_method(
+    mdTypeDef type,
+    const char16_t *name,
+    gsl::span<const COR_SIGNATURE> signature,
+    std::initializer_list<appmap::signature::type> locals,
+    std::vector<appmap::cil::instruction> code
+) {
     const auto tok = metadata.get(&IMetaDataEmit::DefineMethod, type, name, 0, signature.data(), signature.size(), method.code_rva(), miManaged);
     add_hook(tok, module.module_id(),
-        [code](const auto &method) {
+        [locals = appmap::signature::locals(locals), code = std::move(code)](const auto &method) {
+            com::hresult::check(method.local_variables()->ReplaceSignature(locals.data(), locals.size()));
+
             instrumentation instr(method);
             auto graph = method.instructions();
             graph.remove_all();

@@ -43,6 +43,11 @@ struct push {
         for (size_t i = 0; i < len; i++)
             sig.push_back(tok[i]);
     }
+
+    void operator()(signature verbatim) {
+        for (auto v: verbatim)
+            sig.push_back(v);
+    }
 };
 
 signature build(COR_SIGNATURE call_convention, type return_type, std::initializer_list<type> parameters)
@@ -77,12 +82,36 @@ signature static_method(type return_type, std::initializer_list<type> parameters
     return build(IMAGE_CEE_CS_CALLCONV_DEFAULT, return_type, std::move(parameters));
 }
 
+signature locals(std::initializer_list<type> types)
+{
+    signature sig = { IMAGE_CEE_CS_CALLCONV_LOCAL_SIG, static_cast<uint8_t>(types.size()) };
+    push pusher{sig};
+    for (const auto &t: types)
+        std::visit(pusher, t);
+
+    return std::move(sig);
+}
+
+signature generic(type typeRef, std::initializer_list<type> types)
+{
+    signature sig = { ELEMENT_TYPE_GENERICINST };
+
+    push pusher{sig};
+    std::visit(pusher, typeRef);
+    sig.push_back(static_cast<uint8_t>(types.size()));
+
+    for (const auto &t: types)
+        std::visit(pusher, t);
+
+    return std::move(sig);
+}
 
 TEST_CASE("building signatures") {
     CHECK(static_method(Void, {}) == signature{ IMAGE_CEE_CS_CALLCONV_DEFAULT, 0, ELEMENT_TYPE_VOID });
     CHECK(method(Void, {string}) == signature{ IMAGE_CEE_CS_CALLCONV_DEFAULT_HASTHIS, 1, ELEMENT_TYPE_VOID, ELEMENT_TYPE_STRING });
     CHECK(static_method(mdTypeRef{0x01000012}, {object, mdTypeRef{0x01000013}}) == signature{ 0, 2, 0x12, 0x49, 0x1c, 0x12, 0x4d });
     CHECK(static_method(value{mdTypeRef{0x01000012}}, {}) == signature{ 0, 0, 0x11, 0x49 });
+    CHECK(generic(mdTypeRef{0x01000012}, {mdTypeRef{0x01000013}}) == signature{ 0x15, 0x12, 0x49, 1, 0x12, 0x4d });
 }
 
 }
