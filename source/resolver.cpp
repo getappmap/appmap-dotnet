@@ -15,7 +15,7 @@ const char *resolve(const char *assembly_name)
     return nullptr;
 }
 
-bool hook_resolver = add_hook("AppMap.ResolveAssembly", [](const auto &method)
+auto hook_resolver = add_hook("AppMap.ResolveAssembly", [](const auto &method)
 {
     instrumentation i(method);
 

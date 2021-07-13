@@ -31,8 +31,11 @@ void appmap::instrumentation_method::on_shutdown()
 }
 
 namespace {
+    using method_ref = std::pair<mdMethodDef, ModuleID>;
+    using hook_point = std::variant<std::string, method_ref>;
+
     auto &hooks() {
-        static std::map<std::string, hook> hooks;
+        static std::map<hook_point, hook> hooks;
         return hooks;
     }
 
@@ -40,13 +43,27 @@ namespace {
         static std::map<std::string, std::vector<std::string>> rejits;
         return rejits;
     }
+
+    std::optional<hook> find_hook(clrie::method_info &method)
+    {
+        const auto &hs = hooks();
+        const auto name = method.full_name();
+
+        if (hs.count(name))
+            return hs.at(name);
+
+        const method_ref ref{method.method_token(), method.module_info().module_id()};
+
+        if (hs.count(ref))
+            return hs.at(ref);
+
+        return {};
+    }
 }
 
 bool appmap::instrumentation_method::should_instrument_method(clrie::method_info method, [[maybe_unused]] bool is_rejit)
 {
-    auto name = method.full_name();
-
-    return hooks().count(std::move(name)) || config.should_instrument(method);
+    return find_hook(method) || config.should_instrument(method);
 }
 
 void appmap::instrumentation_method::instrument_method(clrie::method_info method, [[maybe_unused]] bool is_rejit)
@@ -55,9 +72,9 @@ void appmap::instrumentation_method::instrument_method(clrie::method_info method
 
     spdlog::trace("instrument_method({}, {})", name, is_rejit);
 
-    if (const auto &hs = hooks(); hs.count(name)) {
-        if (hs.at(name)(method)) return;
-    }
+    if (const auto hook = find_hook(method))
+        if ((*hook)(method))
+            return;
 
     recorder::instrument(method);
     spdlog::trace("instrument_method({}, {}) finished", method.full_name(), is_rejit);
@@ -103,6 +120,10 @@ hook appmap::add_hook(const std::string &method_name, const std::string &module_
     return hooks()[method_name] = handler;
 }
 
+hook appmap::add_hook(mdMethodDef method, ModuleID module, hook handler)
+{
+    return hooks()[method_ref{method, module}] = handler;
+}
 
 // This creates a test registry so that a build with tests enabled
 // can still be used as an instrumentation DLL, not only linked

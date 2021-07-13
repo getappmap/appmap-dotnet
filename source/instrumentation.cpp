@@ -1,6 +1,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/ranges.h>
 #include <utf8.h>
+
+#include "method.h"
 #include "instrumentation.h"
 
 using namespace appmap;
@@ -239,4 +241,34 @@ mdMemberRef appmap::instrumentation::member_reference(mdTypeRef type, const char
         &IMetaDataEmit::DefineMemberRef, type,
         member, signature.data(), signature.size()
     );
+}
+
+mdTypeDef appmap::instrumentation::define_type(const char16_t *name)
+{
+    return metadata.get(&IMetaDataEmit::DefineTypeDef, name, 0, type_reference(u"System.Runtime", u"System.Object"), nullptr);
+}
+
+mdFieldDef appmap::instrumentation::define_field(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature)
+{
+    return metadata.get(&IMetaDataEmit::DefineField, type, name, 0, signature.data(), signature.size(), ELEMENT_TYPE_END, nullptr, 0);
+}
+
+mdMethodDef appmap::instrumentation::define_method(mdTypeDef type, const char16_t *name, gsl::span<const COR_SIGNATURE> signature, std::vector<appmap::cil::instruction> code)
+{
+    const auto tok = metadata.get(&IMetaDataEmit::DefineMethod, type, name, 0, signature.data(), signature.size(), method.code_rva(), miManaged);
+    add_hook(tok, module.module_id(),
+        [code](const auto &method) {
+            instrumentation instr(method);
+            auto graph = method.instructions();
+            graph.remove_all();
+
+            const auto ret = instr.create_instruction(Cee_Ret);
+            graph.insert_after(nullptr, ret);
+            graph.insert_before(ret, appmap::cil::compile(code, instr));
+
+            return true;
+        }
+    );
+
+    return tok;
 }

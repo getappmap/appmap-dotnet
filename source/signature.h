@@ -14,10 +14,13 @@ constexpr inline COR_SIGNATURE object = ELEMENT_TYPE_OBJECT;
 constexpr inline COR_SIGNATURE string = ELEMENT_TYPE_STRING;
 constexpr inline COR_SIGNATURE Void = ELEMENT_TYPE_VOID;
 
-using type = std::variant<mdTypeRef, COR_SIGNATURE>;
+struct value { mdTypeRef token; };
+
+using type = std::variant<mdTypeRef, value, COR_SIGNATURE>;
 
 using signature = std::vector<COR_SIGNATURE>;
 
+signature field(type t);
 signature method(type return_type, std::initializer_list<type> parameters);
 signature static_method(type return_type, std::initializer_list<type> parameters);
 
