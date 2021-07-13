@@ -71,9 +71,20 @@ void appmap::instrumentation_method::on_module_loaded(clrie::module_info module)
     if (const auto &rejits = requested_rejits(); rejits.count(name)) {
         const auto md = module.meta_data_import();
         for (const auto &method: rejits.at(name)) {
-            const auto dot = method.find_last_of('.');
-            const auto type = md.get(&IMetaDataImport::FindTypeDefByName, utf8::utf8to16(method.substr(0, dot)).c_str(), 0);
-            const auto function = md.get(&IMetaDataImport::FindMethod, type, utf8::utf8to16(method.substr(dot + 1)).c_str(), nullptr, 0);
+            auto dot = method.find_last_of('.');
+            while (dot > 0 && method[dot - 1] == '.') dot--; // find the right dot in .ctor and the likes
+
+            mdToken type;
+            if (md->FindTypeDefByName(utf8::utf8to16(method.substr(0, dot)).c_str(), 0, &type) != S_OK) {
+                spdlog::warn("type {} not found in {}", method.substr(0, dot), name);
+                continue;
+            }
+
+            mdToken function;
+            if (md->FindMethod(type, utf8::utf8to16(method.substr(dot + 1)).c_str(), nullptr, 0, &function) != S_OK) {
+                spdlog::warn("method {} not found in {}", method, name);
+                continue;
+            }
 
             spdlog::debug("requesting rejit of {} in {}", method, name);
             module.request_rejit(function);

@@ -69,6 +69,12 @@ namespace clrie {
                 insert_before(pos, ins);
         }
 
+        void insert_before(iterator pos, std::initializer_list<com::ptr<IInstruction>> instructions)
+        {
+            for (auto ins : instructions)
+                insert_before(pos, ins);
+        }
+
         // Insert an instruction after another instruction. jmp offsets that point to the next instruction after
         // the other instruction are not updated to reflect this change
         void insert_after(iterator instruction_orig, com::ptr<IInstruction> instruction_new) {

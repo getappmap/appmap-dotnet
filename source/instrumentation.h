@@ -109,9 +109,26 @@ namespace appmap {
         }
 
         // emit metadata and return reference tokens
-        mdToken type_reference(const char16_t *assembly, const char16_t *type);
-        mdToken member_reference(const char16_t *assembly, const char16_t *type,
-            const char16_t *member, gsl::span<const COR_SIGNATURE> signature);
+
+        mdAssemblyRef assembly_reference(const char16_t *assembly);
+
+        mdTypeRef type_reference(mdAssemblyRef assembly, const char16_t *type);
+        mdTypeRef type_reference(const char16_t *assembly, const char16_t *type) {
+            return type_reference(assembly_reference(assembly), type);
+        }
+
+        mdMemberRef member_reference(mdTypeRef type, const char16_t *member,
+            gsl::span<const COR_SIGNATURE> signature);
+
+        mdMemberRef member_reference(mdAssemblyRef assembly, const char16_t *type,
+            const char16_t *member, gsl::span<const COR_SIGNATURE> signature) {
+            return member_reference(type_reference(assembly, type), member, signature);
+        }
+
+        mdMemberRef member_reference(const char16_t *assembly, const char16_t *type,
+            const char16_t *member, gsl::span<const COR_SIGNATURE> signature) {
+            return member_reference(type_reference(assembly, type), member, signature);
+        }
 
     protected:
         instruction_sequence make_call_sig(void *fn, gsl::span<const COR_SIGNATURE> signature) const;

@@ -210,7 +210,7 @@ appmap::instrumentation::capture_value(clrie::type &type) const noexcept
     return seq;
 }
 
-mdToken appmap::instrumentation::type_reference(const char16_t *assembly, const char16_t *type)
+mdAssemblyRef appmap::instrumentation::assembly_reference(const char16_t *assembly)
 {
     constexpr USHORT any_version = -1;
     constexpr ASSEMBLYMETADATA any_metadata = {
@@ -218,21 +218,25 @@ mdToken appmap::instrumentation::type_reference(const char16_t *assembly, const 
         nullptr, 0, nullptr, 0, nullptr, 0
     };
 
-    const auto assemblyRef = module.meta_data_assembly_emit().get(
+    return module.meta_data_assembly_emit().get(
         &IMetaDataAssemblyEmit::DefineAssemblyRef,
         nullptr, 0, assembly, &any_metadata, nullptr, 0, 0
     );
+}
+
+mdTypeRef appmap::instrumentation::type_reference(mdAssemblyRef assembly, const char16_t *type)
+{
     return metadata.get(
         &IMetaDataEmit::DefineTypeRefByName,
-        assemblyRef, type
+        assembly, type
     );
 }
 
-mdToken appmap::instrumentation::member_reference(const char16_t *assembly,
-    const char16_t *type, const char16_t *member, gsl::span<const COR_SIGNATURE> signature)
+mdMemberRef appmap::instrumentation::member_reference(mdTypeRef type, const char16_t *member,
+    gsl::span<const COR_SIGNATURE> signature)
 {
     return metadata.get(
-        &IMetaDataEmit::DefineMemberRef, type_reference(assembly, type),
+        &IMetaDataEmit::DefineMemberRef, type,
         member, signature.data(), signature.size()
     );
 }
