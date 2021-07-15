@@ -1,0 +1,54 @@
+{
+  "events": [
+    {
+      "event": "call",
+      "http_server_request": {
+        "path_info": "/test/here?query=string",
+        "request_method": "POST"
+      },
+      "id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.AspNetApplication",
+      "event": "call",
+      "id": 2,
+      "method_id": "Invoke",
+      "parameters": [
+        {
+          "class": "Microsoft.AspNetCore.Http.HttpContext",
+          "value": "Microsoft.AspNetCore.Http.DefaultHttpContext"
+        }
+      ],
+      "static": true
+    },
+    {
+      "defined_class": "AppMap.Test.Code.AspNetApplication+<Invoke>d__0",
+      "event": "call",
+      "id": 3,
+      "method_id": "MoveNext",
+      "static": false
+    },
+    {
+      "event": "return",
+      "id": 4,
+      "parent_id": 3
+    },
+    {
+      "event": "return",
+      "id": 5,
+      "parent_id": 2,
+      "return_value": {
+        "class": "System.Threading.Tasks.Task",
+        "value": "System.Threading.Tasks.Task`1[System.Threading.Tasks.VoidTaskResult]"
+      }
+    },
+    {
+      "event": "return",
+      "http_server_response": {
+        "status_code": 442
+      },
+      "id": 6,
+      "parent_id": 1
+    }
+  ]
+}
