@@ -9,6 +9,7 @@
 
 namespace appmap { namespace signature {
 
+constexpr inline COR_SIGNATURE boolean = ELEMENT_TYPE_BOOLEAN;
 constexpr inline COR_SIGNATURE int32 = ELEMENT_TYPE_I4;
 constexpr inline COR_SIGNATURE native_int = ELEMENT_TYPE_I;
 constexpr inline COR_SIGNATURE object = ELEMENT_TYPE_OBJECT;

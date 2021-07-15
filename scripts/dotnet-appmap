@@ -8,14 +8,6 @@ find_file() {
     done
     return 1
 }
-runsettings() {
-    # I can't get MSTest to find the library path on its own,
-    # so create a temporary runsettings file with the full path substituted.
-
-    local runs=`mktemp`
-    cat $BINPATH/appmap.runsettings | sed -e s@%PWD%@$BINPATH@ > $runs
-    echo $runs
-}
 
 mydir=$(dirname `readlink -f $0`)
 BINPATH=$(find_file libappmap-instrumentation.so $mydir $mydir/../out)
@@ -29,8 +21,7 @@ export MicrosoftInstrumentationEngine_DisableCodeSignatureValidation=${Microsoft
 export MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=${MicrosoftInstrumentationEngine_ConfigPath64_TestMethod:-$BINPATH/ProductionBreakpoints_x64.config}
 
 if [ "$1" = "test" ]; then
-    shift
-    exec dotnet test -s `runsettings` "$@"
+    exec dotnet "$@"
 elif [ -x "`type -p "$1"`" ]; then
     exec "$@"
 else

@@ -43,6 +43,7 @@ namespace ops {
 
     constexpr inline auto ldnull = op{Cee_Ldnull};
     constexpr inline auto pop = op{Cee_Pop};
+    constexpr inline auto dup = op{Cee_Dup};
 
     struct ldc: long_op {
         ldc(uint64_t val): long_op{Cee_Ldc_I8, val} {}
