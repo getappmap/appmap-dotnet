@@ -23,9 +23,12 @@ namespace AppLand.AppMap
             return dict[key] = value;
         }
 
+        public const string INSTRUMENTATION_SO = @"libappmap-instrumentation.so";
+        public const string CLRIE_SO = @"libInstrumentationEngine.so";
+
         public static readonly string[] RequiredFiles = {
-            "libappmap-instrumentation.so",
-            "libInstrumentationEngine.so",
+            INSTRUMENTATION_SO,
+            CLRIE_SO,
             "ProductionBreakpoints_x64.config"
         };
 
@@ -77,15 +80,44 @@ namespace AppLand.AppMap
         {
             SetOrKeep(env, "CORECLR_ENABLE_PROFILING", "1");
             SetOrKeep(env, "CORECLR_PROFILER", CLRIE_GUID);
-            SetOrKeep(env, "CORECLR_PROFILER_PATH_64", Path.Join(runtimeDir, "libInstrumentationEngine.so"));
+            SetOrKeep(env, "CORECLR_PROFILER_PATH_64", Path.Join(runtimeDir, CLRIE_SO));
             SetOrKeep(env, "MicrosoftInstrumentationEngine_DisableCodeSignatureValidation", "1");
             SetOrKeep(env, "MicrosoftInstrumentationEngine_ConfigPath64_AppMap", Path.Join(runtimeDir, "ProductionBreakpoints_x64.config"));
+        }
+
+        [DllImport("dl")]
+        static extern IntPtr dlopen(string fileName, int flags);
+        const int RTLD_NOW = 2;
+
+        [DllImport("dl")]
+        static extern string dlclose(IntPtr handle);
+
+        [DllImport("dl")]
+        static extern int dlerror();
+
+        static bool TryLoadDl(string path)
+        {
+            dlerror();
+
+            var handle = dlopen(path, RTLD_NOW);
+            if (handle == IntPtr.Zero) {
+                Console.WriteLine($"Error when trying to load instrumentation, {dlerror()}");
+                return false;
+            }
+
+            dlclose(handle);
+
+            return true;
+        }
+
+        static bool TryLoadRuntime(string path) {
+            return TryLoadDl(Path.Join(path, INSTRUMENTATION_SO)) && TryLoadDl(Path.Join(path, CLRIE_SO));
         }
 
         static int Main(string[] args)
         {
             if (!PlatformSupported()) {
-                Console.WriteLine($"AppMap for .net is currently only supported on linux-x64.");
+                Console.WriteLine($"AppMap for .NET is currently only supported on linux-x64.");
                 Console.WriteLine($"Platform {RuntimeInformation.RuntimeIdentifier} not supported yet.");
                 Console.WriteLine($"Please go to https://github.com/applandinc/appmap-dotnet to tell us about platform support you're interested in.");
                 return 127;
@@ -95,6 +127,11 @@ namespace AppLand.AppMap
 
             if (runtimeDir == null)
                 return 128;
+
+            // Try to dlopen as a sanity check. Later, failure to load a dll
+            // will cause the instrumentation to be silently skipped.
+            if (!TryLoadRuntime(runtimeDir))
+                return 130;
 
             var exec = new ProcessStartInfo("dotnet");
             PrepareEnvironment(exec.Environment, runtimeDir);
