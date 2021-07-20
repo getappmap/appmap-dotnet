@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(
   appmap-dotnet
-  VERSION 0.0.1
+  VERSION 0.0.2
   LANGUAGES CXX
 )
 
@@ -17,58 +17,39 @@ endif()
 
 include(cmake/CPM.cmake)
 
-CPMAddPackage(
-    NAME utfcpp
-    GITHUB_REPOSITORY nemtrif/utfcpp
-    VERSION 3.1.2
-)
+CPMAddPackage("gh:nemtrif/utfcpp@3.1.2")
 
 CPMAddPackage(
   NAME nlohmann_json
   VERSION 3.9.1
   # not using the repo as it takes forever to clone
   URL https://github.com/nlohmann/json/releases/download/v3.9.1/include.zip
+  OPTIONS "JSON_BuildTests OFF"
 )
-
-CPMAddPackage(
-  NAME spdlog
-  VERSION 1.8.2
-  GITHUB_REPOSITORY gabime/spdlog
-)
-target_compile_options(spdlog PRIVATE -fPIC)
 
 if (nlohmann_json_ADDED)
   add_library(nlohmann_json INTERFACE IMPORTED)
   target_include_directories(nlohmann_json INTERFACE ${nlohmann_json_SOURCE_DIR}/include)
 endif()
 
-CPMAddPackage(
-  NAME doctest
-  GITHUB_REPOSITORY onqtam/doctest
-  GIT_TAG 2.4.5
-)
+CPMAddPackage("gh:gabime/spdlog@1.8.2")
+target_compile_options(spdlog PRIVATE -fPIC)
+
+CPMAddPackage("gh:onqtam/doctest@2.4.5#2.4.5")
 
 CPMAddPackage(
   NAME yaml-cpp
   GITHUB_REPOSITORY jbeder/yaml-cpp
   GIT_TAG yaml-cpp-0.6.3
+  VERSION 0.6.3
   OPTIONS "YAML_CPP_BUILD_TESTS OFF;YAML_CPP_BUILD_TOOLS OFF;YAML_CPP_BUILD_CONTRIB OFF"
 )
-
-CPMAddPackage(
-  NAME gsl-lite
-  GITHUB_REPOSITORY gsl-lite/gsl-lite
-  VERSION 0.37.0
-)
-
-CPMAddPackage(
-  NAME range-v3
-  GITHUB_REPOSITORY ericniebler/range-v3
-  GIT_TAG 0.11.0
-  VERSION 0.11.0
-)
-
 target_compile_options(yaml-cpp PRIVATE -fPIC)
+
+CPMAddPackage("gh:gsl-lite/gsl-lite@0.37.0")
+
+CPMAddPackage("gh:ericniebler/range-v3#0.11.0@0.11.0")
+
 
 # ---- Add source files ----
 
