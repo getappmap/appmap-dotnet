@@ -90,10 +90,10 @@ namespace AppLand.AppMap
         const int RTLD_NOW = 2;
 
         [DllImport("dl")]
-        static extern string dlclose(IntPtr handle);
+        static extern int dlclose(IntPtr handle);
 
         [DllImport("dl")]
-        static extern int dlerror();
+        static extern string dlerror();
 
         static bool TryLoadDl(string path)
         {
