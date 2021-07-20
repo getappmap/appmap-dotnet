@@ -85,14 +85,14 @@ namespace AppLand.AppMap
             SetOrKeep(env, "MicrosoftInstrumentationEngine_ConfigPath64_AppMap", Path.Join(runtimeDir, "ProductionBreakpoints_x64.config"));
         }
 
-        [DllImport("dl")]
+        [DllImport("libdl.so.2")]
         static extern IntPtr dlopen(string fileName, int flags);
         const int RTLD_NOW = 2;
 
-        [DllImport("dl")]
+        [DllImport("libdl.so.2")]
         static extern int dlclose(IntPtr handle);
 
-        [DllImport("dl")]
+        [DllImport("libdl.so.2")]
         static extern string dlerror();
 
         static bool TryLoadDl(string path)
@@ -101,7 +101,7 @@ namespace AppLand.AppMap
 
             var handle = dlopen(path, RTLD_NOW);
             if (handle == IntPtr.Zero) {
-                Console.WriteLine($"Error when trying to load instrumentation, {dlerror()}");
+                Console.WriteLine($"Error when trying to load instrumentation:\n{dlerror()}");
                 return false;
             }
 
