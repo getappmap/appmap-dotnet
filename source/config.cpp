@@ -173,7 +173,7 @@ namespace {
             spdlog::warn("unrecognized package specification in config file: {}", pkg);
         }
 
-        return std::move(result);
+        return result;
     }
 
 

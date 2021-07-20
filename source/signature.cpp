@@ -62,7 +62,7 @@ signature build(COR_SIGNATURE call_convention, type return_type, std::initialize
     for (const auto &param: parameters)
         std::visit(pusher, param);
 
-    return std::move(sig);
+    return sig;
 }
 
 signature field(type t)
@@ -89,7 +89,7 @@ signature locals(std::initializer_list<type> types)
     for (const auto &t: types)
         std::visit(pusher, t);
 
-    return std::move(sig);
+    return sig;
 }
 
 signature generic(type typeRef, std::initializer_list<type> types)
@@ -103,7 +103,7 @@ signature generic(type typeRef, std::initializer_list<type> types)
     for (const auto &t: types)
         std::visit(pusher, t);
 
-    return std::move(sig);
+    return sig;
 }
 
 TEST_CASE("building signatures") {
