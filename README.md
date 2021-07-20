@@ -1,14 +1,15 @@
 # AppMap-dotnet
 
-AppMap-dotnet records the execution of .net code. Note currently only Linux is supported.
+AppMap-dotnet records the execution of .NET code. Note currently only Linux is supported.
 
 ## Usage
 
-An `dotnet-appmap` script is provided for ease of use; it automatically configures the runtime environment.
-See details below (or the script itself), or just dive in with the release tarball:
+A launcher, provided as a `dotnet` tool, is provided for ease of use;
+it automatically configures the runtime environment as explained below.
+
+See details below or just dive in:
 ```sh-session
-$ tar xvf ~/Download/appmap-dotnet-*.tar.bz2 -C ~/opt
-$ ln -s ~/opt/appmap-dotnet-*/dotnet-appmap ~/.local/bin # or anywhere on the PATH
+$ dotnet tool install -g appland.appmap
 $ cd ~/projects/myproject
 $ echo "packages: [ class: MyProject ]" > appmap.yml
 $ APPMAP_OUTPUT_PATH=/dev/stdout dotnet appmap exec bin/myproject.dll
@@ -34,15 +35,7 @@ MicrosoftInstrumentationEngine_FileLogPath=/dev/stderr
 MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=opt/appmap-dotnet/ProductionBreakpoints_x64.config
 ```
 
-For convenience [run](scripts/appmap-dotnet) script is provided that sets it all up for the `out` subdirectory, as built
-by `docker-build.sh`. If you're building locally, you can `ln -sf build/libappmap-instrumentation.so out`
-so that the current binary is used.
-
-### Microsoft Testing Framework (aka VSTest) integration
-
-Directory `vstest` contains a data collector which, when used together with the instrumentation, enables
-generating individual appmaps for each test case; this works with any test framework integrated with MSTest.
-Runsettings file to set up the collector correctly is included and automatically used when running `dotnet appmap test`.
+For convenience a launcher is provided that sets it all up.
 
 ## Configuration
 
@@ -99,10 +92,19 @@ File path. If set, an appmap encompassing the whole execution is saved there on 
 Log level, one of `trace`, `debug`, `info`, `warning`, `error`, `critical`, `off`.
 Defaults to `info`.
 
+### `APPMAP_RUNTIME_DIR`
+
+Used by the launcher; directory containing `libappmap-instrumentation.so`
+and `libInstrumentationEngine.so`. When installed as a tool, the launcher automatically
+finds the packaged binaries. This variable is convenient when developing, so
+that the launcher picks up the locally compiled libraries.
+
 ## Building
 
 The repository is pretty self-contained and should build on any Linux with modern cmake and C++ compiler.
-`vstest` directory requires dotnet sdk to build.
 
 You can use `scripts/docker-build.sh` to build both CLRIE and this instrumentation method in Docker.
 On success, `out` directory will contain all the files needed to use this instrumentation method.
+
+`launcher` requires dotnet SDK to build; `dotnet pack` in that directory will build the nuget package,
+including the native binaries placed in `out`.

@@ -2,21 +2,30 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>dotnet-appmap</ToolCommandName>
     <Nullable>enable</Nullable>
+
+    <Title>AppMap for .NET</Title>
+    <PackageId>AppLand.AppMap</PackageId>
+    <Version>0.0.2</Version>
+    <Authors>Rafał Rzepecki</Authors>
+    <Company>AppLand Inc.</Company>
+    <Copyright>Copyright (c) 2021 AppLand Inc.; portions copyright by Microsoft</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Record the operation of a .NET program, using the AppLand 'AppMap' format.</Description>
+    <PackageTags>AppMap;instrumentation</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadme>README.md</PackageReadme>
+    <PackageProjectUrl>https://github.com/applandinc/appmap-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/applandinc/appmap-dotnet.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="../out/libappmap-instrumentation.so">
-      <PackagePath>runtimes/linux-x64/native</PackagePath>
-    </Content>
-    <Content Include="../out/libInstrumentationEngine.so">
-      <PackagePath>runtimes/linux-x64/native</PackagePath>
-    </Content>
-    <Content Include="../out/ProductionBreakpoints_x64.config">
-      <PackagePath>runtimes/linux-x64/native</PackagePath>
-    </Content>
+    <Content Include="../out/libappmap-instrumentation.so" PackagePath="runtimes/linux-x64/native" />
+    <Content Include="../out/libInstrumentationEngine.so" PackagePath="runtimes/linux-x64/native" />
+    <Content Include="../out/ProductionBreakpoints_x64.config" PackagePath="runtimes/linux-x64/native" />
+    <Content Include="icon.png" PackagePath="/" />
+    <Content Include="../README.md" PackagePath="/" />
   </ItemGroup>
 </Project>
