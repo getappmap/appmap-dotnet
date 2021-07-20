@@ -141,6 +141,12 @@ namespace AppLand.AppMap
                 arguments.Add(arg);
             }
 
+            if (args.Length == 0) {
+                Console.WriteLine("\nUsage: dotnet appmap [other dotnet arguments]\n");
+                Console.WriteLine("Example:\n  $ dotnet appmap test");
+                return 131;
+            }
+
             try {
                 var proc = Process.Start(exec);
                 if (proc == null) {
