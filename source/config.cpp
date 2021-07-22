@@ -5,6 +5,7 @@
 #include <utf8.h>
 #include <spdlog/fmt/bundled/ostream.h>
 #include <fstream>
+#include <cstdio>
 
 #include "config.h"
 
@@ -210,14 +211,39 @@ namespace {
         return c;
     }
 
+    constexpr auto MAX_FILENAME_SIZE = 255 - 12;  // 12 is length of ".appmap.json"
+    constexpr auto HASH_LEN = 7;
+
+    // A non-cryptographic printable hash of the given string
+    std::string name_hash(const std::string &value)
+    {
+        static std::hash<std::string> hash;
+        char buffer[10];  // intentionally a bit longer than strictly necessary
+        std::snprintf(buffer, 10, "%09lx", hash(value));
+
+        return std::string(buffer + 10 - HASH_LEN - 1, HASH_LEN);
+    }
+
     std::string sanitize_filename(const std::string &name)
     {
         std::string result = name;
+
+        if (result.size() > MAX_FILENAME_SIZE) {
+            const auto tail = name_hash(result.substr(MAX_FILENAME_SIZE - HASH_LEN - 1));
+            result = result.substr(0, MAX_FILENAME_SIZE - HASH_LEN - 1) + "_" + tail;
+        }
+
         for (char &c : result) {
             if (c == '/' || c == fs::path::preferred_separator)
                 c = '-';
         }
         return result;
+    }
+
+    TEST_CASE("sanitizing long filenames") {
+        const auto lots_of_as = sanitize_filename(std::string(256, 'a'));
+        CHECK(lots_of_as.size() == MAX_FILENAME_SIZE);
+        CHECK(lots_of_as == std::string(235, 'a') + "_3b47158");
     }
 
     std::unique_ptr<std::ostream> output_file(const std::filesystem::path &path, std::ios_base::openmode mode = std::ios_base::out)
