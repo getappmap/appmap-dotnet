@@ -68,6 +68,11 @@ namespace appmap {
         j["static"] = m.is_static;
     }
 
+    void to_json(json &j, const parameter_info &p) {
+        j["name"] = p.name;
+        j["class"] = p.type;
+    }
+
     function_call_event::operator json() const
     {
         json j;
@@ -78,11 +83,10 @@ namespace appmap {
         if (args.empty()) return j;
 
         json params = json::array();
-        auto type = method.parameters.begin();
+        auto param_it = method.parameters.begin();
         for (const auto &arg: args) {
-            json param;
+            json param = *(param_it++);
             std::visit([&param] (auto &&v) { param["value"] = v; }, arg);
-            param["class"] = *(type++);
             params.push_back(param);
         }
         j["parameters"] = params;

@@ -16,6 +16,7 @@
       "parameters": [
         {
           "class": "Microsoft.AspNetCore.Http.HttpContext",
+          "name": "context",
           "value": "Microsoft.AspNetCore.Http.DefaultHttpContext"
         }
       ],

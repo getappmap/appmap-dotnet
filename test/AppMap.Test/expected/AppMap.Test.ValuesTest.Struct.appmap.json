@@ -8,6 +8,7 @@
       "parameters": [
         {
           "class": "AppMap.Test.Code.AStruct",
+          "name": "s",
           "value": "AppMap.Test.Code.AStruct"
         }
       ],
@@ -26,6 +27,7 @@
       "parameters": [
         {
           "class": "BYREF",
+          "name": "s",
           "value": "AppMap.Test.Code.AStruct"
         }
       ],

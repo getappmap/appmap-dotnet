@@ -8,6 +8,7 @@
       "parameters": [
         {
           "class": "BOOLEAN",
+          "name": "giveValue",
           "value": true
         }
       ],
@@ -30,6 +31,7 @@
       "parameters": [
         {
           "class": "BOOLEAN",
+          "name": "giveValue",
           "value": false
         }
       ],

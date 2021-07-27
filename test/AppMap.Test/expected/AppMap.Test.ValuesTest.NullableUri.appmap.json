@@ -36,6 +36,7 @@
       "parameters": [
         {
           "class": "System.Uri",
+          "name": "value",
           "value": "http://appmap.test/"
         }
       ],

@@ -8,6 +8,7 @@
       "parameters": [
         {
           "class": "OBJECT",
+          "name": "value",
           "value": null
         }
       ],
@@ -26,6 +27,7 @@
       "parameters": [
         {
           "class": "OBJECT",
+          "name": "value",
           "value": "System.Object"
         }
       ],
@@ -56,6 +58,7 @@
       "parameters": [
         {
           "class": "OBJECT",
+          "name": "value",
           "value": "something else"
         }
       ],

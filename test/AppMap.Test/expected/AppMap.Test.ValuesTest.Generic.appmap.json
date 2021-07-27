@@ -8,6 +8,7 @@
       "parameters": [
         {
           "class": "MVAR",
+          "name": "v",
           "value": "testing"
         }
       ],
@@ -30,6 +31,7 @@
       "parameters": [
         {
           "class": "MVAR",
+          "name": "v",
           "value": null
         }
       ],
@@ -52,6 +54,7 @@
       "parameters": [
         {
           "class": "MVAR",
+          "name": "v",
           "value": "00000000-0000-0000-0000-000000000000"
         }
       ],

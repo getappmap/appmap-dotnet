@@ -8,10 +8,12 @@
       "parameters": [
         {
           "class": "BYREF",
+          "name": "uri",
           "value": null
         },
         {
           "class": "BYREF",
+          "name": "i",
           "value": true
         }
       ],
@@ -30,10 +32,12 @@
       "parameters": [
         {
           "class": "BYREF",
+          "name": "uri",
           "value": "http://appmap.test/"
         },
         {
           "class": "BYREF",
+          "name": "i",
           "value": false
         }
       ],

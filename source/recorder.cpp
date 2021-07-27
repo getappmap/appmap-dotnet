@@ -1,6 +1,7 @@
 #include <doctest/doctest.h>
 #include <range/v3/algorithm/move.hpp>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/bundled/ranges.h>
 
 #include "recorder.h"
 
@@ -184,6 +185,35 @@ namespace {
             return false;
         }
     }
+
+    // TODO: DRY up with instrumentation.cpp
+    template <typename F>
+    struct [[maybe_unused]] scope_guard {
+        scope_guard(F fun) : f(fun) {}
+        ~scope_guard() { f(); }
+
+    private:
+        F f;
+    };
+
+    auto param_names(clrie::method_info &method)
+    {
+        std::vector<std::string> names;
+        const auto metadata = method.module_info().meta_data_import();
+
+        HCORENUM it = nullptr;
+        mdParamDef param;
+        const auto token = method.method_token();
+        scope_guard closer{ [&]() { if (it) metadata->CloseEnum(it); } };
+
+        while (metadata->EnumParams(&it, token, &param, 1, nullptr) == S_OK) {
+            char16_t name[256];
+            com::hresult::check(metadata->GetParamProps(param, nullptr, nullptr, name, 256, nullptr, nullptr, nullptr, nullptr, nullptr));
+            names.push_back(utf8::utf16to8(std::u16string(name)));
+        }
+
+        return names;
+    }
 }
 
 void recorder::instrument(clrie::method_info method)
@@ -198,13 +228,17 @@ void recorder::instrument(clrie::method_info method)
     auto ins = code.first_instruction();
 
     const auto parameters = method.parameters();
-    std::vector<std::string> parameter_types;
-    parameter_types.reserve(parameters.size());
+    std::vector<parameter_info> parameter_infos;
+    parameter_infos.reserve(parameters.size());
+    const auto names = param_names(method);
+    spdlog::trace("param names: {}", names);
+    auto names_it = names.begin();
 
     uint idx = is_static ? 0 : 1;
     for (auto &p: parameters) {
         const clrie::type type = p.get(&IMethodParameter::GetType);
-        parameter_types.push_back(type.name());
+        assert(names_it != names.end());
+        parameter_infos.push_back({type.name(), *(names_it++)});
         code.insert_before(ins, instr.create_load_arg_instruction(idx++));
         code.insert_before(ins, capture_argument(instr, type));
     }
@@ -236,6 +270,6 @@ void recorder::instrument(clrie::method_info method)
         method.name(),
         is_static,
         return_type.name(),
-        std::move(parameter_types)
+        std::move(parameter_infos)
     });
 }
