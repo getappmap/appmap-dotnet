@@ -85,29 +85,72 @@ namespace AppLand.AppMap
             SetOrKeep(env, "MicrosoftInstrumentationEngine_ConfigPath64_AppMap", Path.Join(runtimeDir, "ProductionBreakpoints_x64.config"));
         }
 
-        [DllImport("libdl.so.2")]
-        static extern IntPtr dlopen(string fileName, int flags);
-        const int RTLD_NOW = 2;
+        static class Dl {
+            [DllImport("dl")]
+            static extern IntPtr dlopen(string fileName, int flags);
 
-        [DllImport("libdl.so.2")]
-        static extern int dlclose(IntPtr handle);
+            [DllImport("dl")]
+            static extern int dlclose(IntPtr handle);
 
-        [DllImport("libdl.so.2")]
-        static extern string dlerror();
+            [DllImport("dl")]
+            static extern string dlerror();
+
+            const int RTLD_NOW = 2;
+
+            static public bool TryLoadDl(string path)
+            {
+                dlerror();
+
+                var handle = dlopen(path, RTLD_NOW);
+                if (handle == IntPtr.Zero) {
+                    Console.WriteLine($"Error when trying to load instrumentation:\n{dlerror()}");
+                    return false;
+                }
+
+                dlclose(handle);
+
+                return true;
+            }
+        }
+
+        // In some distributions libdl.so symlink is missing
+        // so we need to specify the full library name.
+        // Unfortunately I haven't found a way around the code duplication.
+        static class DlSo2 {
+            [DllImport("libdl.so.2")]
+            static extern IntPtr dlopen(string fileName, int flags);
+
+            [DllImport("libdl.so.2")]
+            static extern int dlclose(IntPtr handle);
+
+            [DllImport("libdl.so.2")]
+            static extern string dlerror();
+
+            const int RTLD_NOW = 2;
+
+            static public bool TryLoadDl(string path)
+            {
+                dlerror();
+
+                var handle = dlopen(path, RTLD_NOW);
+                if (handle == IntPtr.Zero) {
+                    Console.WriteLine($"Error when trying to load instrumentation:\n{dlerror()}");
+                    return false;
+                }
+
+                dlclose(handle);
+
+                return true;
+            }
+        }
 
         static bool TryLoadDl(string path)
         {
-            dlerror();
-
-            var handle = dlopen(path, RTLD_NOW);
-            if (handle == IntPtr.Zero) {
-                Console.WriteLine($"Error when trying to load instrumentation:\n{dlerror()}");
-                return false;
+            try {
+                return Dl.TryLoadDl(path);
+            } catch (DllNotFoundException) {
+                return DlSo2.TryLoadDl(path);
             }
-
-            dlclose(handle);
-
-            return true;
         }
 
         static bool TryLoadRuntime(string path) {
