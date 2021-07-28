@@ -11,9 +11,12 @@ namespace AppLand.AppMap
     {
         static bool PlatformSupported()
         {
-            return RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
-                && RuntimeInformation.ProcessArchitecture == Architecture.X64;
+            return RuntimeInformation.ProcessArchitecture == Architecture.X64 && (
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
+                || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)
+            );
         }
+
 
         static string? SetOrKeep(IDictionary<string, string?> dict, string key, string value)
         {
@@ -23,8 +26,11 @@ namespace AppLand.AppMap
             return dict[key] = value;
         }
 
-        public const string INSTRUMENTATION_SO = @"libappmap-instrumentation.so";
-        public const string CLRIE_SO = @"libInstrumentationEngine.so";
+        static readonly string RuntimeId = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "linux-x64" : "osx-x64";
+        public static readonly string SO_SUFFIX = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "so" : "dylib";
+
+        public static readonly string INSTRUMENTATION_SO = $"libappmap-instrumentation.{SO_SUFFIX}";
+        public static readonly string CLRIE_SO = $"libInstrumentationEngine.{SO_SUFFIX}";
 
         public static readonly string[] RequiredFiles = {
             INSTRUMENTATION_SO,
@@ -47,8 +53,8 @@ namespace AppLand.AppMap
             if (thisPath != null) {
                 paths.Add(thisPath);
                 // in a package this assembly will be at /tools/net5.0/any/AppLand.AppMap.dll
-                // and native libraries will be at /runtimes/linux-x64/native/
-                paths.Add(Path.GetFullPath(Path.Combine(thisPath, "../../../runtimes/linux-x64/native")));
+                // and native libraries will be at /runtimes/<rid>/native/
+                paths.Add(Path.GetFullPath(Path.Combine(thisPath, $"../../../runtimes/{RuntimeId}/native")));
             }
 
             foreach (string path in paths) {
@@ -160,7 +166,7 @@ namespace AppLand.AppMap
         static int Main(string[] args)
         {
             if (!PlatformSupported()) {
-                Console.WriteLine($"AppMap for .NET is currently only supported on linux-x64.");
+                Console.WriteLine($"AppMap for .NET is currently only supported on linux-x64 and osx-x64.");
                 Console.WriteLine($"Platform {RuntimeInformation.RuntimeIdentifier} not supported yet.");
                 Console.WriteLine($"Please go to https://github.com/applandinc/appmap-dotnet to tell us about platform support you're interested in.");
                 return 127;
