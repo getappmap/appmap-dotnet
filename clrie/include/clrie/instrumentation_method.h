@@ -3,7 +3,12 @@
 #include <cor.h>
 #include <corhdr.h>
 #include <no_sal.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
 #include <InstrumentationEngine.h>
+#pragma clang diagnostic pop
+
 #include "com/base.h"
 #include "com/hresult.h"
 #include "com/ptr.h"

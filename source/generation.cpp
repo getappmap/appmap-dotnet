@@ -21,7 +21,7 @@ using namespace nlohmann;
 
 namespace {
     template <typename T>
-    constexpr std::string code_object_type(const T &arg) {
+    std::string code_object_type(const T &arg) {
         using namespace appmap::classmap;
         if constexpr (std::is_same_v<T, function>)
             return "function";

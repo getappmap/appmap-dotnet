@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <variant>
 
-class IMethodInfo;
+struct IMethodInfo;
 
 namespace appmap {
     namespace classmap {

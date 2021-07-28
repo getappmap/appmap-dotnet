@@ -71,7 +71,6 @@ set_target_properties(appmap-instrumentation PROPERTIES CXX_STANDARD 20)
 
 # being a cross-platform target, we enforce standards conformance on MSVC
 target_compile_options(appmap-instrumentation PUBLIC "$<$<BOOL:${MSVC}>:/permissive->")
-target_compile_options(appmap-instrumentation PRIVATE -Wno-pmf-conversions -fconcepts)
 
 add_subdirectory(pal)
 add_subdirectory(com)
@@ -84,6 +83,11 @@ else()
 endif()
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp stdc++fs doctest range-v3
+    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp doctest range-v3
     PUBLIC clrie
 )
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    target_link_libraries(appmap-instrumentation PRIVATE stdc++fs)
+    target_compile_options(appmap-instrumentation PRIVATE -Wno-pmf-conversions -fconcepts)
+endif()

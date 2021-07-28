@@ -12,11 +12,13 @@ public:
     using type = std::remove_pointer_t<decltype(element(&Enum::Next))>;
 };
 
-template <typename Enum, typename Elt = typename element_of_enum<Enum>::type>
-requires requires(Enum enu, Elt *elt, DWORD dw) {
-    { enu.GetCount(&dw) } -> HRESULT;
-    { enu.Next(dw, &elt, &dw) } -> HRESULT;
-}
+template <
+    typename Enum, typename Elt = typename element_of_enum<Enum>::type,
+    typename = std::enable_if_t<
+        std::is_same_v<decltype(static_cast<Enum *>(nullptr)->GetCount(nullptr)), HRESULT>
+        && std::is_same_v<decltype(static_cast<Enum *>(nullptr)->Next(0, nullptr, nullptr)), HRESULT>
+    >
+>
 auto to_vector(com::ptr<Enum> enu)
 {
     const auto len = enu.get(&Enum::GetCount);

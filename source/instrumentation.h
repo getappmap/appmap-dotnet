@@ -13,35 +13,28 @@
 
 namespace appmap {
     template <typename T>
-    constexpr COR_SIGNATURE type_signature;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<void> = ELEMENT_TYPE_VOID;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<int32_t> = ELEMENT_TYPE_I4;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<int64_t> = ELEMENT_TYPE_I8;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<uint32_t> = ELEMENT_TYPE_U4;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<uint64_t> = ELEMENT_TYPE_U8;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<char *> = ELEMENT_TYPE_STRING;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<const char *> = ELEMENT_TYPE_STRING;
-
-    static_assert(sizeof(void *) == 8);
-    template <typename T>
-    constexpr COR_SIGNATURE type_signature<T *> = ELEMENT_TYPE_I8;
-
-    template <>
-    constexpr COR_SIGNATURE type_signature<bool> = ELEMENT_TYPE_BOOLEAN;
+    constexpr COR_SIGNATURE type_signature() {
+        if constexpr (std::is_same_v<T, void>) {
+            return ELEMENT_TYPE_VOID;
+        } else if constexpr (std::is_same_v<T, int32_t>) {
+            return ELEMENT_TYPE_I4;
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+            return ELEMENT_TYPE_I8;
+        } else if constexpr (std::is_same_v<T, uint32_t>) {
+            return ELEMENT_TYPE_U4;
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+            return ELEMENT_TYPE_U8;
+        } else if constexpr (std::is_same_v<T, char *> || std::is_same_v<T, const char *>) {
+            return ELEMENT_TYPE_STRING;
+        } else if constexpr (std::is_pointer_v<T>) {
+            static_assert(sizeof(void *) == 8);
+            return ELEMENT_TYPE_I8;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return ELEMENT_TYPE_BOOLEAN;
+        } else {
+            static_assert(std::is_same_v<T, void>, "unhandled native type");
+        }
+    }
 
     template <typename F>
     struct func_traits;
@@ -53,8 +46,8 @@ namespace appmap {
         static constexpr std::array<COR_SIGNATURE, 3 + arity> signature = {
             IMAGE_CEE_UNMANAGED_CALLCONV_STDCALL,
             arity,
-            type_signature<Ret>,
-            type_signature<Args>...
+            type_signature<Ret>(),
+            type_signature<Args>()...
         };
     };
 
@@ -107,7 +100,7 @@ namespace appmap {
         template <typename T>
         uint64_t add_local()
         {
-            auto t = type_factory.get(&ITypeCreator::FromCorElement, static_cast<CorElementType>(type_signature<T>));
+            auto t = type_factory.get(&ITypeCreator::FromCorElement, static_cast<CorElementType>(type_signature<T>()));
             return locals.get(&ILocalVariableCollection::AddLocal, t);
         }
 

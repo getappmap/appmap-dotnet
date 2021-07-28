@@ -2,7 +2,10 @@
 
 #include <no_sal.h>
 #include <cor.h>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
 #include <InstrumentationEngine.h>
+#pragma clang diagnostic pop
 #include "com/ptr.h"
 #include "clrie/detail/enumeration.h"
 #include "clrie/instruction_graph.h"

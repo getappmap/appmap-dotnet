@@ -13,6 +13,7 @@ namespace fs = std::filesystem;
 using namespace appmap;
 
 struct config::instrumentation_filter {
+    virtual ~instrumentation_filter() {}
     virtual bool match(
         clrie::method_info method
     ) const noexcept

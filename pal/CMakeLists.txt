@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project(pal LANGUAGES CXX)
 
 add_library(pal source/guid.cpp source/bstr.cpp source/token.cpp)
+set_target_properties(pal PROPERTIES CXX_STANDARD 20)
 
 target_compile_options(pal PRIVATE -fPIC)
 target_compile_definitions(pal PUBLIC PAL_STDCPP_COMPAT)

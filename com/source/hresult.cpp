@@ -22,16 +22,16 @@ const std::error_category &hresult::category() noexcept
     return category;
 }
 
-HRESULT hresult::of_exception(std::exception_ptr ex, const std::experimental::source_location &loc)
+HRESULT hresult::of_exception(std::exception_ptr ex)
 {
     try {
         std::rethrow_exception(ex);
     } catch (const hresult::error &err) {
         return err.code().value();
     } catch (const std::exception &ex) {
-        std::cerr << "Unhandled exception in " << loc.function_name() << "(): " << ex.what() << std::endl;
+        std::cerr << "Unhandled exception: " << ex.what() << std::endl;
     } catch (...) {
-        std::cerr << "Unhandled unknown exception in " << loc.function_name() << "()" << std::endl;
+        std::cerr << "Unhandled unknown exception" << std::endl;
     }
     return (HRESULT)0x80004005L; // E_FAIL
 }

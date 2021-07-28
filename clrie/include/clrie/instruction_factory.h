@@ -1,9 +1,15 @@
 #pragma once
 
+#include <vector>
+#include "com/ptr.h"
+
 #include <cor.h>
 #include <no_sal.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Woverloaded-virtual"
 #include <InstrumentationEngine.h>
-#include "com/ptr.h"
+#pragma clang diagnostic pop
 
 namespace clrie {
     struct instruction_factory
@@ -67,7 +73,7 @@ namespace clrie {
         instruction load_constant(T value) const {
             IInstruction *result;
             if constexpr (sizeof(T) == sizeof(uint64_t)) {
-                com::hresult::check(ptr->CreateLongOperandInstruction(Cee_Ldc_I8, reinterpret_cast<uint64_t>(value), &result));
+                com::hresult::check(ptr->CreateLongOperandInstruction(Cee_Ldc_I8, value, &result));
             } else if constexpr (sizeof(T) == sizeof(uint32_t)) {
                 com::hresult::check(ptr->CreateIntOperandInstruction(Cee_Ldc_I4, reinterpret_cast<uint32_t>(value), &result));
             } else if constexpr (sizeof(T) == sizeof(uint8_t)) {
