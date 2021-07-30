@@ -1,0 +1,35 @@
+name: build
+
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: configure
+        run: cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+
+      - name: build
+        run: cmake --build build -j4
+
+      - name: archive so
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: libappmap-instrumentation.so
+          path: build/libappmap-instrumentation.so
+
+      - name: archive dylib
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v2
+        with:
+          name: libappmap-instrumentation.dylib
+          path: build/libappmap-instrumentation.dylib
