@@ -2,15 +2,10 @@
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/ranges.h>
-#include <range/v3/algorithm/any_of.hpp>
-#include <range/v3/iterator/operations.hpp>
-#include <range/v3/view/remove_if.hpp>
-#include <range/v3/view/split.hpp>
-#include <range/v3/view/transform.hpp>
-#include <range/v3/view/unique.hpp>
 
 #include <algorithm>
 #include <unordered_set>
+#include <sstream>
 
 #include "classmap.h"
 #include "generation.h"
@@ -34,18 +29,20 @@ namespace {
     }
 
     classmap::classmap classmap_of_recording(const recording &rec) {
-        using namespace ranges::views;
         classmap::classmap map;
 
-        for (const method_info &method: rec
-            | remove_if([](const auto &ev) { return typeid(*ev) != typeid(function_call_event); })
-            | transform([](const auto &ev) { return static_cast<const function_call_event &>(*ev).function; }) | unique
-            | transform([](const FunctionID fun) { return method_infos.at(fun); }))
-        {
+        std::unordered_set<size_t> functions;
+        for (const auto &ev: rec)
+            if (const auto event = dynamic_cast<const function_call_event *>(ev.get()); event != nullptr)
+                functions.insert(event->function);
+
+        for (const auto fun: functions) {
+            const auto &method = method_infos.at(fun);
             classmap::code_container *code = &map;
-            for (std::string &&part: std::string_view(method.defined_class) | split('.')
-                | transform([](auto &&rng) { return std::string(&*rng.begin(), ranges::distance(rng)); })
-            ) {
+
+            std::istringstream tokens(method.defined_class);
+            std::string part;
+            while (std::getline(tokens, part, '.')) {
                 auto [it, inserted] = code->try_emplace(part, std::make_unique<classmap::code_object>(classmap::code_container()));
                 code = &std::get<classmap::code_container>(*(it->second));
                 if (inserted)
@@ -241,14 +238,14 @@ TEST_CASE("basic generation") {
                     "type": "class",
                     "children": [
                         {
-                            "name": "OtherMethod",
-                            "type": "function",
-                            "static": true
-                        },
-                        {
                             "name": "Method",
                             "type": "function",
                             "static": false
+                        },
+                        {
+                            "name": "OtherMethod",
+                            "type": "function",
+                            "static": true
                         }
                     ]
                 }]

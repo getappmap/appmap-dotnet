@@ -1,5 +1,4 @@
 #include <doctest/doctest.h>
-#include <range/v3/algorithm/move.hpp>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/bundled/ranges.h>
 
@@ -135,6 +134,7 @@ namespace {
     template <>
     void capture_argument<const char *>(const char *value)
     {
+        spdlog::trace("captured string {}", value);
         if (value)
             arguments.push_back(std::string(value));
         else

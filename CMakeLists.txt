@@ -48,9 +48,6 @@ target_compile_options(yaml-cpp PRIVATE -fPIC)
 
 CPMAddPackage("gh:gsl-lite/gsl-lite@0.37.0")
 
-CPMAddPackage("gh:ericniebler/range-v3#0.11.0@0.11.0")
-
-
 # ---- Add source files ----
 
 # Note: globbing sources is considered bad practice as CMake's generators may not detect new files
@@ -83,7 +80,7 @@ else()
 endif()
 
 target_link_libraries(appmap-instrumentation
-    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp doctest range-v3
+    PRIVATE com spdlog gsl-lite nlohmann_json yaml-cpp doctest
     PUBLIC clrie
 )
 
