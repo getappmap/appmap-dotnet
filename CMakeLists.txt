@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 
 project(
   appmap-dotnet
-  VERSION 0.0.3
+  VERSION 0.0.4
   LANGUAGES CXX
 )
 
