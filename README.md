@@ -1,6 +1,6 @@
 # AppMap-dotnet
 
-AppMap-dotnet records the execution of .NET code. Note currently only Linux is supported.
+AppMap-dotnet records the execution of .NET code. Note currently only Linux and OS X are supported.
 
 ## Usage
 
@@ -35,7 +35,22 @@ MicrosoftInstrumentationEngine_FileLogPath=/dev/stderr
 MicrosoftInstrumentationEngine_ConfigPath64_TestMethod=opt/appmap-dotnet/ProductionBreakpoints_x64.config
 ```
 
+(For OSX, replace .so with .dylib throughout and in the config file.)
+
 For convenience a launcher is provided that sets it all up.
+
+## VSTest integration
+
+When the instrumentation is loaded, VSTest tests are automatically detected and
+the runs recorded. The appmaps are written to `$APPMAP_OUTPUT_DIR`.
+
+When using XUnit, test parallelization is disabled; otherwise the test code
+interleaves and the appmap make no sense.
+
+## ASP.NET core integration
+
+AppMap hooks into *Microsoft.AspNetCore.Builder.ApplicationBuilder.Build*
+allowing it to detect and record HTTP requests and responses.
 
 ## Configuration
 
@@ -48,6 +63,7 @@ creating an `appmap.yml` file in the project root directory, for example:
 name: my-project
 packages:
 - class: MyProject.UtilityClass
+  exclude: Helper  # this excludes MyProject.UtilityClass.Helper
 - module: MyProject.Business.dll
 - path: /usr/lib/util
 ```
@@ -94,8 +110,8 @@ Defaults to `info`.
 
 ### `APPMAP_RUNTIME_DIR`
 
-Used by the launcher; directory containing `libappmap-instrumentation.so`
-and `libInstrumentationEngine.so`. When installed as a tool, the launcher automatically
+Used by the launcher; directory containing `libappmap-instrumentation.so` (.dylib)
+and `libInstrumentationEngine.so` (.dylib). When installed as a tool, the launcher automatically
 finds the packaged binaries. This variable is convenient when developing, so
 that the launcher picks up the locally compiled libraries.
 
@@ -107,4 +123,4 @@ You can use `scripts/docker-build.sh` to build both CLRIE and this instrumentati
 On success, `out` directory will contain all the files needed to use this instrumentation method.
 
 `launcher` requires dotnet SDK to build; `dotnet pack` in that directory will build the nuget package,
-including the native binaries placed in `out`.
+including the native binaries placed in `bin/osx-x64` and `bin/linux-x64`.
