@@ -26,8 +26,8 @@
     <Content Include="../bin/osx-x64/libappmap-instrumentation.dylib" PackagePath="runtimes/osx-x64/native" />
     <Content Include="../bin/linux-x64/libInstrumentationEngine.so" PackagePath="runtimes/linux-x64/native" />
     <Content Include="../bin/osx-x64/libInstrumentationEngine.dylib" PackagePath="runtimes/osx-x64/native" />
-    <Content Include="../bin/linux-x64/ProductionBreakpoints_x64.config" PackagePath="runtimes/linux-x64/native" />
-    <Content Include="../bin/osx-x64/ProductionBreakpoints_x64.config" PackagePath="runtimes/osx-x64/native" />
+    <Content Include="../config/ProductionBreakpoints_x64.linux.config" PackagePath="runtimes/linux-x64/native/ProductionBreakpoints_x64.config" />
+    <Content Include="../config/ProductionBreakpoints_x64.osx.config" PackagePath="runtimes/osx-x64/native/ProductionBreakpoints_x64.config" />
     <Content Include="icon.png" PackagePath="/" />
     <Content Include="../README.md" PackagePath="/" />
   </ItemGroup>
