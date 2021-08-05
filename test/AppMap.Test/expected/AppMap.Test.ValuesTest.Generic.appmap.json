@@ -12,7 +12,8 @@
           "value": "testing"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -21,7 +22,8 @@
       "return_value": {
         "class": "MVAR",
         "value": "testing"
-      }
+      },
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
@@ -35,7 +37,8 @@
           "value": null
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -44,7 +47,8 @@
       "return_value": {
         "class": "MVAR",
         "value": null
-      }
+      },
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
@@ -58,7 +62,8 @@
           "value": "00000000-0000-0000-0000-000000000000"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -67,7 +72,8 @@
       "return_value": {
         "class": "MVAR",
         "value": "00000000-0000-0000-0000-000000000000"
-      }
+      },
+      "thread_id": 1
     }
   ]
 }

@@ -6,7 +6,8 @@
         "path_info": "/test/here?query=string",
         "request_method": "POST"
       },
-      "id": 1
+      "id": 1,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.AspNetApplication",
@@ -20,19 +21,22 @@
           "value": "Microsoft.AspNetCore.Http.DefaultHttpContext"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.AspNetApplication+<Invoke>d__0",
       "event": "call",
       "id": 3,
       "method_id": "MoveNext",
-      "static": false
+      "static": false,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 4,
-      "parent_id": 3
+      "parent_id": 3,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -41,7 +45,8 @@
       "return_value": {
         "class": "System.Threading.Tasks.Task",
         "value": "System.Threading.Tasks.Task`1[System.Threading.Tasks.VoidTaskResult]"
-      }
+      },
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -49,7 +54,8 @@
         "status_code": 442
       },
       "id": 6,
-      "parent_id": 1
+      "parent_id": 1,
+      "thread_id": 1
     }
   ]
 }

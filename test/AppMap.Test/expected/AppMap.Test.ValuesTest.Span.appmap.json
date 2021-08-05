@@ -5,7 +5,8 @@
       "event": "call",
       "id": 1,
       "method_id": "Span",
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -14,7 +15,8 @@
       "return_value": {
         "class": "GENERICINST",
         "value": "System.Span<Byte>[4]"
-      }
+      },
+      "thread_id": 1
     }
   ]
 }

@@ -12,12 +12,14 @@
           "value": "AppMap.Test.Code.AStruct"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 2,
-      "parent_id": 1
+      "parent_id": 1,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
@@ -31,12 +33,14 @@
           "value": "AppMap.Test.Code.AStruct"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 4,
-      "parent_id": 3
+      "parent_id": 3,
+      "thread_id": 1
     }
   ]
 }

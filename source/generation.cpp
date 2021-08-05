@@ -70,11 +70,16 @@ namespace appmap {
         j["class"] = p.type;
     }
 
+    event::operator json() const
+    {
+        return {{ "thread_id", thread }};
+    }
+
     function_call_event::operator json() const
     {
-        json j;
+        auto j = event::operator json();
         const auto &method = method_infos.at(function);
-        j = method;
+        j.update(method);
         j["event"] = "call";
         const auto &args = arguments;
         if (args.empty()) return j;
@@ -93,7 +98,7 @@ namespace appmap {
 
     return_event::operator json() const
     {
-        json j;
+        auto j = event::operator json();
 
         j["event"] = "return";
         if (value) {
@@ -109,7 +114,7 @@ namespace appmap {
 
     http_request_event::operator json() const
     {
-        json j;
+        auto j = event::operator json();
         j["event"] = "call";
         j["http_server_request"] = {
             { "request_method", meth },
@@ -220,10 +225,10 @@ namespace doctest {
 TEST_CASE("basic generation") {
     appmap::recording events;
 
-    events.push_back(std::make_unique<function_call_event>(0));
-    events.push_back(std::make_unique<function_call_event>(1));
-    events.push_back(std::make_unique<return_event>(static_cast<function_call_event *>(events[1].get()), uint64_t{42}));
-    events.push_back(std::make_unique<return_event>(static_cast<function_call_event *>(events[0].get()), int64_t{-31337}));
+    events.push_back(std::make_unique<function_call_event>(42, 0));
+    events.push_back(std::make_unique<function_call_event>(42, 1));
+    events.push_back(std::make_unique<return_event>(42, static_cast<function_call_event *>(events[1].get()), uint64_t{42}));
+    events.push_back(std::make_unique<return_event>(42, static_cast<function_call_event *>(events[0].get()), int64_t{-31337}));
 
     method_infos.push_back({ "Some.Class", "Method", false, "I8" });
     method_infos.push_back({ "Some.Class", "OtherMethod", true, "U4" });
@@ -256,14 +261,16 @@ TEST_CASE("basic generation") {
                     "event": "call",
                     "defined_class": "Some.Class",
                     "method_id": "Method",
-                    "static": false
+                    "static": false,
+                    "thread_id": 42
                 },
                 {
                     "id": 2,
                     "event": "call",
                     "defined_class": "Some.Class",
                     "method_id": "OtherMethod",
-                    "static": true
+                    "static": true,
+                    "thread_id": 42
                 },
                 {
                     "id": 3,
@@ -272,7 +279,8 @@ TEST_CASE("basic generation") {
                     "return_value": {
                         "class": "U4",
                         "value": 42
-                    }
+                    },
+                    "thread_id": 42
                 },
                 {
                     "id": 4,
@@ -281,7 +289,8 @@ TEST_CASE("basic generation") {
                     "return_value": {
                         "class": "I8",
                         "value": -31337
-                    }
+                    },
+                    "thread_id": 42
                 }
             ]
         })"_json);
@@ -289,8 +298,8 @@ TEST_CASE("basic generation") {
 
 TEST_CASE("http events generation") {
     appmap::recording events;
-    events.push_back(std::make_unique<http_request_event>("POST", "/test"));
-    events.push_back(std::make_unique<http_response_event>(static_cast<call_event *>(events[0].get()), 409));
+    events.push_back(std::make_unique<http_request_event>(42, "POST", "/test"));
+    events.push_back(std::make_unique<http_response_event>(42, static_cast<call_event *>(events[0].get()), 409));
     CHECK(json::parse(generate(events, false)) == R"({"events": [
         {
             "id": 1,
@@ -298,7 +307,8 @@ TEST_CASE("http events generation") {
             "http_server_request": {
                 "path_info": "/test",
                 "request_method": "POST"
-            }
+            },
+            "thread_id": 42
         },
         {
             "id": 2,
@@ -306,7 +316,8 @@ TEST_CASE("http events generation") {
             "parent_id": 1,
             "http_server_response": {
                 "status_code": 409
-            }
+            },
+            "thread_id": 42
         }
     ]})"_json);
 }

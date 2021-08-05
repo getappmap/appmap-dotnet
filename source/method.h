@@ -14,7 +14,7 @@ namespace appmap {
     {
         std::unordered_set<std::string> modules;
         appmap::config &config = appmap::config::instance();
-        com::ptr<IProfilerManager> profiler_manager;
+        static com::ptr<ICorProfilerInfo> profiler_info;
 
         void initialize(com::ptr<IProfilerManager> manager);
         bool should_instrument_method(clrie::method_info method, bool is_rejit);
@@ -27,4 +27,6 @@ namespace appmap {
     hook add_hook(const std::string &method_name, hook handler);
     hook add_hook(mdMethodDef method, ModuleID module, hook handler);
     hook add_hook(const std::string &method_name, const std::string &module_name, hook handler);
+
+    uint64_t current_thread_id();
 }

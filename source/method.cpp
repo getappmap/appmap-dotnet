@@ -10,10 +10,13 @@
 
 using namespace appmap;
 
+com::ptr<ICorProfilerInfo> appmap::instrumentation_method::profiler_info = nullptr;
+
 void appmap::instrumentation_method::initialize(com::ptr<IProfilerManager> manager)
 {
     spdlog::debug("initialize()");
-    profiler_manager = manager;
+    assert(profiler_info == nullptr);
+    profiler_info = manager.get(&IProfilerManager::GetCorProfilerInfo);
     instrumentation::signature_builder = manager.get(&IProfilerManager::CreateSignatureBuilder);
 }
 
@@ -125,6 +128,13 @@ hook appmap::add_hook(mdMethodDef method, ModuleID module, hook handler)
     return hooks()[method_ref{method, module}] = handler;
 }
 
+uint64_t appmap::current_thread_id()
+{
+    if (instrumentation_method::profiler_info != nullptr)
+        return instrumentation_method::profiler_info.get(&ICorProfilerInfo::GetCurrentThreadID);
+    else // mostly for testing
+        return 42;
+}
 // This creates a test registry so that a build with tests enabled
 // can still be used as an instrumentation DLL, not only linked
 // with the test runner.

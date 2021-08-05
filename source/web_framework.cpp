@@ -7,11 +7,13 @@
 
 #include <spdlog/spdlog.h>
 
+using namespace appmap;
+
 namespace sig = appmap::signature;
 namespace appmap { namespace web_framework {
     auto request(const char *method, const char *path_info) {
         spdlog::trace("request({}, {})", method, path_info);
-        auto call = std::make_unique<http_request_event>(method, path_info);
+        auto call = std::make_unique<http_request_event>(current_thread_id(), method, path_info);
         call_event *ptr = call.get();
         recorder::events.push_back(std::move(call));
         return ptr;
@@ -19,7 +21,7 @@ namespace appmap { namespace web_framework {
 
     void response(const call_event *parent, int code) {
         spdlog::trace("response({})", code);
-        recorder::events.push_back(std::make_unique<http_response_event>(parent, code));
+        recorder::events.push_back(std::make_unique<http_response_event>(current_thread_id(), parent, code));
     }
 
     auto asp_net_build = add_hook(

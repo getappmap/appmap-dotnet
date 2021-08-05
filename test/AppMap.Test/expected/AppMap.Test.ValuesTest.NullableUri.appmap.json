@@ -5,19 +5,22 @@
       "event": "call",
       "id": 1,
       "method_id": ".ctor",
-      "static": false
+      "static": false,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 2,
-      "parent_id": 1
+      "parent_id": 1,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
       "event": "call",
       "id": 3,
       "method_id": "get_Uri",
-      "static": false
+      "static": false,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -26,7 +29,8 @@
       "return_value": {
         "class": "System.Uri",
         "value": null
-      }
+      },
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
@@ -40,19 +44,22 @@
           "value": "http://appmap.test/"
         }
       ],
-      "static": false
+      "static": false,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 6,
-      "parent_id": 5
+      "parent_id": 5,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
       "event": "call",
       "id": 7,
       "method_id": "get_Uri",
-      "static": false
+      "static": false,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -61,7 +68,8 @@
       "return_value": {
         "class": "System.Uri",
         "value": "http://appmap.test/"
-      }
+      },
+      "thread_id": 1
     }
   ]
 }

@@ -5,24 +5,28 @@
       "event": "call",
       "id": 1,
       "method_id": "Fun1",
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Threads",
       "event": "call",
       "id": 2,
       "method_id": "Fun2",
-      "static": true
+      "static": true,
+      "thread_id": 2
     },
     {
       "event": "return",
       "id": 3,
-      "parent_id": 1
+      "parent_id": 1,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 4,
-      "parent_id": 2
+      "parent_id": 2,
+      "thread_id": 2
     }
   ]
 }

@@ -12,7 +12,8 @@
           "value": true
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -21,7 +22,8 @@
       "return_value": {
         "class": "GENERICINST",
         "value": "00000000-0000-0000-0000-000000000000"
-      }
+      },
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
@@ -35,7 +37,8 @@
           "value": false
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
@@ -44,7 +47,8 @@
       "return_value": {
         "class": "GENERICINST",
         "value": null
-      }
+      },
+      "thread_id": 1
     }
   ]
 }

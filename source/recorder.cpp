@@ -5,6 +5,7 @@
 #include "recorder.h"
 
 #include "instrumentation.h"
+#include "method.h"
 #include "method_info.h"
 
 using namespace appmap;
@@ -23,7 +24,7 @@ namespace {
             const auto &method_info = method_infos.at(id);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        auto event = std::make_unique<function_call_event>(id, std::exchange(arguments, {}));
+        auto event = std::make_unique<function_call_event>(current_thread_id(), id, std::exchange(arguments, {}));
         auto ptr = event.get();
         recorder::events.push_back(std::move(event));
         return ptr;
@@ -36,7 +37,7 @@ namespace {
             const auto &method_info = method_infos.at(call->function);
             spdlog::trace("{}({}.{})", __FUNCTION__, method_info.defined_class, method_info.method_id);
         }
-        recorder::events.push_back(std::make_unique<return_event>(call));
+        recorder::events.push_back(std::make_unique<return_event>(current_thread_id(), call));
     }
 
     template <typename T>
@@ -47,7 +48,7 @@ namespace {
             const auto &method_info = method_infos.at(call->function);
             spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
         }
-        recorder::events.push_back(std::make_unique<return_event>(call, return_value));
+        recorder::events.push_back(std::make_unique<return_event>(current_thread_id(), call, return_value));
     }
 
     template <>
@@ -62,9 +63,9 @@ namespace {
                 spdlog::trace("{}({}, {}.{})", __FUNCTION__, return_value, method_info.defined_class, method_info.method_id);
         }
         if (return_value == nullptr)
-            recorder::events.push_back(std::make_unique<return_event>(call, nullptr));
+            recorder::events.push_back(std::make_unique<return_event>(current_thread_id(), call, nullptr));
         else
-            recorder::events.push_back(std::make_unique<return_event>(call, std::string(return_value)));
+            recorder::events.push_back(std::make_unique<return_event>(current_thread_id(), call, std::string(return_value)));
     }
 
     TEST_CASE("method_returned()")
@@ -72,12 +73,12 @@ namespace {
         recorder::events.clear();
         SUBCASE("with a string argument") {
             method_returned("hello", nullptr);
-            CHECK((*recorder::events.back() == return_event{nullptr, std::string("hello")}));
+            CHECK((*recorder::events.back() == return_event{42, nullptr, std::string("hello")}));
         }
 
         SUBCASE("with nullptr") {
             method_returned<const char *>(nullptr, nullptr);
-            CHECK((*recorder::events.back() == return_event{nullptr, nullptr}));
+            CHECK((*recorder::events.back() == return_event{42, nullptr, nullptr}));
         }
     }
 

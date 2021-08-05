@@ -12,12 +12,14 @@
           "value": null
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 2,
-      "parent_id": 1
+      "parent_id": 1,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.DisablableConsole",
@@ -31,24 +33,28 @@
           "value": "System.Object"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.DisablableConsole",
       "event": "call",
       "id": 4,
       "method_id": ".cctor",
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 5,
-      "parent_id": 4
+      "parent_id": 4,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 6,
-      "parent_id": 3
+      "parent_id": 3,
+      "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.DisablableConsole",
@@ -62,12 +68,14 @@
           "value": "something else"
         }
       ],
-      "static": true
+      "static": true,
+      "thread_id": 1
     },
     {
       "event": "return",
       "id": 8,
-      "parent_id": 7
+      "parent_id": 7,
+      "thread_id": 1
     }
   ]
 }
