@@ -2,6 +2,9 @@ name: build
 
 on: [push]
 
+env:
+  CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+
 jobs:
   build:
     strategy:
@@ -14,11 +17,21 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: configure
-        run: cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+      - uses: actions/cache@v2
+        with:
+          path: "**/cpm_modules"
+          key: ${{ github.workflow }}-cpm-modules-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+
+      - uses: actions/cache@v2
+        with:
+          path: "bin/**/libInstrumentationEngine.*"
+          key: ${{ github.workflow }}-clrie-${{ matrix.os }}-${{ hashFiles('scripts/get-clrie.sh') }}
 
       - name: build
-        run: cmake --build build -j4
+        run: ./scripts/build.sh
+
+      - name: test
+        run: ./scripts/test.sh
 
       - name: archive so
         if: matrix.os == 'ubuntu-latest'
