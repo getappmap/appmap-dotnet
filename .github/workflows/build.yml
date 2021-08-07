@@ -46,3 +46,37 @@ jobs:
         with:
           name: libappmap-instrumentation.dylib
           path: build/libappmap-instrumentation.dylib
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: "bin/linux-x64/libInstrumentationEngine.so"
+          key: ${{ github.workflow }}-clrie-ubuntu-latest-${{ hashFiles('scripts/get-clrie.sh') }}
+
+      - uses: actions/cache@v2
+        with:
+          path: "bin/osx-x64/libInstrumentationEngine.dylib"
+          key: ${{ github.workflow }}-clrie-macos-latest-${{ hashFiles('scripts/get-clrie.sh') }}
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: libappmap-instrumentation.so
+          path: bin/linux-x64/
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: libappmap-instrumentation.dylib
+          path: bin/osx-x64/
+
+      - run: ./scripts/package.sh
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: AppLand.AppMap.nupkg
+          path: launcher/bin/Release/*.nupkg
