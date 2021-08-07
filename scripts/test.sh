@@ -29,4 +29,4 @@ export APPMAP_RUNTIME_DIR=$PWD/bin/$os-x64
 cp -f build/*.$sosuffix $APPMAP_RUNTIME_DIR
 cp -f config/ProductionBreakpoints_x64.$os.config $APPMAP_RUNTIME_DIR/ProductionBreakpoints_x64.config
 
-test/AppMap.Test/run.sh
+APPMAP_LOG_LEVEL=debug test/AppMap.Test/run.sh
