@@ -24,6 +24,12 @@ jobs:
 
       - uses: actions/cache@v2
         with:
+          path: build/_deps
+          key: ${{ github.workflow }}-deps-${{ matrix.os }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}
+          restore-keys: ${{ github.workflow }}-deps-${{ matrix.os }}-
+
+      - uses: actions/cache@v2
+        with:
           path: "bin/**/libInstrumentationEngine.*"
           key: ${{ github.workflow }}-clrie-${{ matrix.os }}-${{ hashFiles('scripts/get-clrie.sh') }}
 
