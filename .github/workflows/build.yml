@@ -47,14 +47,14 @@ jobs:
         run: ./scripts/test.sh
 
       - name: archive so
-        if: matrix.os == 'ubuntu-latest'
+        if: always() && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v2
         with:
           name: libappmap-instrumentation.so
           path: build/libappmap-instrumentation.so
 
       - name: archive dylib
-        if: matrix.os == 'macos-latest'
+        if: always() && matrix.os == 'macos-latest'
         uses: actions/upload-artifact@v2
         with:
           name: libappmap-instrumentation.dylib
