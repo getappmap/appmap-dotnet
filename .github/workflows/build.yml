@@ -4,6 +4,7 @@ on: [push]
 
 env:
   CPM_SOURCE_CACHE: ${{ github.workspace }}/cpm_modules
+  NUGET_PACKAGES: ${{ github.workspace }}/nuget-packages
 
 jobs:
   build:
@@ -16,6 +17,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/nuget-packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
 
       - uses: actions/cache@v2
         with:
@@ -59,6 +66,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: ${{ github.workspace }}/nuget-packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: nuget-
 
       - uses: actions/cache@v2
         with:
