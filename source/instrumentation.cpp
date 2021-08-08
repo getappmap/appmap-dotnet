@@ -202,11 +202,11 @@ appmap::instrumentation::capture_value(clrie::type &type) const noexcept
             }
 
         default:
-            // stringify
-            {
-                spdlog::debug("generic capture of value of type {}", type.name());
-                seq += create_call_to_string(type);
-            }
+            spdlog::debug("generic capture of value of type {}", type.name());
+            [[fallthrough]];
+
+        case ELEMENT_TYPE_SZARRAY:
+            seq += create_call_to_string(type);
     }
 
     return seq;
