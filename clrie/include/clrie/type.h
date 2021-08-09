@@ -1,6 +1,23 @@
 #pragma once
 
+#include <com/ptr.h>
+
+#include <no_sal.h>
+#include <cor.h>
+
 #include <InstrumentationEngine.h>
+
+template<>
+constexpr GUID com::guid_of<ITokenType>() noexcept {
+    using namespace com::literals;
+    return "77655B33-1B29-4285-9F2D-FF9526E3A0AA"_guid;
+}
+
+template<>
+constexpr GUID com::guid_of<ICompositeType>() noexcept {
+    using namespace com::literals;
+    return "06B9FD79-0386-4CF3-93DD-A23E95EBC225"_guid;
+}
 
 namespace clrie {
     struct type: public com::ptr<IType>

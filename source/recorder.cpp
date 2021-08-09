@@ -7,6 +7,7 @@
 #include "instrumentation.h"
 #include "method.h"
 #include "method_info.h"
+#include "type.h"
 
 using namespace appmap;
 
@@ -239,7 +240,7 @@ void recorder::instrument(clrie::method_info method)
     for (auto &p: parameters) {
         const clrie::type type = p.get(&IMethodParameter::GetType);
         assert(names_it != names.end());
-        parameter_infos.push_back({type.name(), *(names_it++)});
+        parameter_infos.push_back({friendly_name(type), *(names_it++)});
         code.insert_before(ins, instr.create_load_arg_instruction(idx++));
         code.insert_before(ins, capture_argument(instr, type));
     }
@@ -270,7 +271,7 @@ void recorder::instrument(clrie::method_info method)
         method.declaring_type().name(),
         method.name(),
         is_static,
-        return_type.name(),
+        friendly_name(return_type),
         std::move(parameter_infos)
     });
 }
