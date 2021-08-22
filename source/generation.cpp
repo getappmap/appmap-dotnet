@@ -81,17 +81,26 @@ namespace appmap {
         const auto &method = method_infos.at(function);
         j.update(method);
         j["event"] = "call";
-        const auto &args = arguments;
-        if (args.empty()) return j;
 
-        json params = json::array();
+        bool capture_receiver = !method.is_static;
         auto param_it = method.parameters.begin();
+        const auto &args = arguments;
+        json params = json::array();
         for (const auto &arg: args) {
             json param = *(param_it++);
             std::visit([&param] (auto &&v) { param["value"] = v; }, arg);
-            params.push_back(param);
+            if (capture_receiver) {
+                param.erase("name");
+                j["receiver"] = param;
+                capture_receiver = false;
+            } else {
+                params.push_back(param);
+            }
         }
-        j["parameters"] = params;
+
+        if (!params.empty()) {
+            j["parameters"] = params;
+        }
 
         return j;
     }

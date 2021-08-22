@@ -29,6 +29,10 @@
       "event": "call",
       "id": 3,
       "method_id": "MoveNext",
+      "receiver": {
+        "class": "AppMap.Test.Code.AspNetApplication+<Invoke>d__0",
+        "value": "AppMap.Test.Code.AspNetApplication+<Invoke>d__0"
+      },
       "static": false,
       "thread_id": 1
     },

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - This changelog, finally.
 - Capture thread id of events.
+- Capture method receiver.
 
 ## [0.0.4] - 2021-08-01
 

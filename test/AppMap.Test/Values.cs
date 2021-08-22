@@ -5,7 +5,7 @@ namespace AppMap.Test
 {
     namespace Code {
         public struct AStruct {
-            public int field;
+            public int field { get; set; }
         }
 
         public class Values {
@@ -107,6 +107,7 @@ namespace AppMap.Test
             var s = new Code.AStruct{field = 5};
             Code.Values.TakesStruct(s);
             Code.Values.StructRef(ref s);
+            s.field = 3;
         }
     }
 }

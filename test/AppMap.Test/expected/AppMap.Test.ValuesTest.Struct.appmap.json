@@ -1,9 +1,34 @@
 {
   "events": [
     {
-      "defined_class": "AppMap.Test.Code.Values",
+      "defined_class": "AppMap.Test.Code.AStruct",
       "event": "call",
       "id": 1,
+      "method_id": "set_field",
+      "parameters": [
+        {
+          "class": "I4",
+          "name": "value",
+          "value": 5
+        }
+      ],
+      "receiver": {
+        "class": "AppMap.Test.Code.AStruct",
+        "value": "AppMap.Test.Code.AStruct"
+      },
+      "static": false,
+      "thread_id": 1
+    },
+    {
+      "event": "return",
+      "id": 2,
+      "parent_id": 1,
+      "thread_id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.Values",
+      "event": "call",
+      "id": 3,
       "method_id": "TakesStruct",
       "parameters": [
         {
@@ -17,14 +42,14 @@
     },
     {
       "event": "return",
-      "id": 2,
-      "parent_id": 1,
+      "id": 4,
+      "parent_id": 3,
       "thread_id": 1
     },
     {
       "defined_class": "AppMap.Test.Code.Values",
       "event": "call",
-      "id": 3,
+      "id": 5,
       "method_id": "StructRef",
       "parameters": [
         {
@@ -38,8 +63,33 @@
     },
     {
       "event": "return",
-      "id": 4,
-      "parent_id": 3,
+      "id": 6,
+      "parent_id": 5,
+      "thread_id": 1
+    },
+    {
+      "defined_class": "AppMap.Test.Code.AStruct",
+      "event": "call",
+      "id": 7,
+      "method_id": "set_field",
+      "parameters": [
+        {
+          "class": "I4",
+          "name": "value",
+          "value": 3
+        }
+      ],
+      "receiver": {
+        "class": "AppMap.Test.Code.AStruct",
+        "value": "AppMap.Test.Code.AStruct"
+      },
+      "static": false,
+      "thread_id": 1
+    },
+    {
+      "event": "return",
+      "id": 8,
+      "parent_id": 7,
       "thread_id": 1
     }
   ]

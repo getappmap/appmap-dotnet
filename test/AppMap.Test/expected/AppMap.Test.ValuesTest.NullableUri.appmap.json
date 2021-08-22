@@ -5,6 +5,10 @@
       "event": "call",
       "id": 1,
       "method_id": ".ctor",
+      "receiver": {
+        "class": "AppMap.Test.Code.Values",
+        "value": "AppMap.Test.Code.Values"
+      },
       "static": false,
       "thread_id": 1
     },
@@ -19,6 +23,10 @@
       "event": "call",
       "id": 3,
       "method_id": "get_Uri",
+      "receiver": {
+        "class": "AppMap.Test.Code.Values",
+        "value": "AppMap.Test.Code.Values"
+      },
       "static": false,
       "thread_id": 1
     },
@@ -44,6 +52,10 @@
           "value": "http://appmap.test/"
         }
       ],
+      "receiver": {
+        "class": "AppMap.Test.Code.Values",
+        "value": "AppMap.Test.Code.Values"
+      },
       "static": false,
       "thread_id": 1
     },
@@ -58,6 +70,10 @@
       "event": "call",
       "id": 7,
       "method_id": "get_Uri",
+      "receiver": {
+        "class": "AppMap.Test.Code.Values",
+        "value": "AppMap.Test.Code.Values"
+      },
       "static": false,
       "thread_id": 1
     },

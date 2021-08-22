@@ -236,7 +236,15 @@ void recorder::instrument(clrie::method_info method)
     spdlog::trace("param names: {}", names);
     auto names_it = names.begin();
 
-    uint idx = is_static ? 0 : 1;
+    uint idx = 0;
+
+    if (!is_static) {
+        const auto &type = method.declaring_type();
+        parameter_infos.push_back({friendly_name(method.declaring_type()), "this"});
+        code.insert_before(ins, instr.create_load_arg_instruction(idx++));
+        code.insert_before(ins, capture_argument(instr, type));
+    }
+
     for (auto &p: parameters) {
         const clrie::type type = p.get(&IMethodParameter::GetType);
         assert(names_it != names.end());
