@@ -55,6 +55,8 @@ namespace {
 
         return map;
     }
+
+    constexpr char APPMAP_VERSION[] = "1.6.0";
 }
 
 
@@ -217,7 +219,7 @@ namespace appmap {
 
 std::string appmap::generate(const appmap::recording &events, bool generate_classmap)
 {
-    json result = { { "events", events } };
+    json result = { { "version", APPMAP_VERSION }, { "events", events } };
     if (generate_classmap)
         result["classMap"] = classmap_of_recording(events);
     return result.dump(2);
@@ -244,6 +246,7 @@ TEST_CASE("basic generation") {
 
     CHECK(json::parse(generate(events, true)) == R"(
         {
+            "version": "1.6.0",
             "classMap": [{
                 "name": "Some",
                 "type": "package",
@@ -309,24 +312,26 @@ TEST_CASE("http events generation") {
     appmap::recording events;
     events.push_back(std::make_unique<http_request_event>(42, "POST", "/test"));
     events.push_back(std::make_unique<http_response_event>(42, static_cast<call_event *>(events[0].get()), 409));
-    CHECK(json::parse(generate(events, false)) == R"({"events": [
-        {
-            "id": 1,
-            "event": "call",
-            "http_server_request": {
-                "path_info": "/test",
-                "request_method": "POST"
+    CHECK(json::parse(generate(events, false)) == R"({
+        "version": "1.6.0",
+        "events": [
+            {
+                "id": 1,
+                "event": "call",
+                "http_server_request": {
+                    "path_info": "/test",
+                    "request_method": "POST"
+                },
+                "thread_id": 42
             },
-            "thread_id": 42
-        },
-        {
-            "id": 2,
-            "event": "return",
-            "parent_id": 1,
-            "http_server_response": {
-                "status_code": 409
-            },
-            "thread_id": 42
-        }
+            {
+                "id": 2,
+                "event": "return",
+                "parent_id": 1,
+                "http_server_response": {
+                    "status_code": 409
+                },
+                "thread_id": 42
+            }
     ]})"_json);
 }

@@ -61,5 +61,6 @@
       "parent_id": 1,
       "thread_id": 1
     }
-  ]
+  ],
+  "version": "1.6.0"
 }
