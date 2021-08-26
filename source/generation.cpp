@@ -217,11 +217,15 @@ namespace appmap {
     }
 }
 
-std::string appmap::generate(const appmap::recording &events, bool generate_classmap)
+std::string appmap::generate(const appmap::recording &events, bool generate_classmap, const metadata &metadata)
 {
     json result = { { "version", APPMAP_VERSION }, { "events", events } };
     if (generate_classmap)
         result["classMap"] = classmap_of_recording(events);
+
+    json md = metadata;
+    if (!md.empty())
+        result["metadata"] = metadata;
     return result.dump(2);
 }
 
@@ -234,6 +238,8 @@ namespace doctest {
 }
 
 TEST_CASE("basic generation") {
+    metadata::common = {{"test", "metadata"}};
+
     appmap::recording events;
 
     events.push_back(std::make_unique<function_call_event>(42, 0));
@@ -247,6 +253,7 @@ TEST_CASE("basic generation") {
     CHECK(json::parse(generate(events, true)) == R"(
         {
             "version": "1.6.0",
+            "metadata": { "test": "metadata" },
             "classMap": [{
                 "name": "Some",
                 "type": "package",
@@ -314,6 +321,7 @@ TEST_CASE("http events generation") {
     events.push_back(std::make_unique<http_response_event>(42, static_cast<call_event *>(events[0].get()), 409));
     CHECK(json::parse(generate(events, false)) == R"({
         "version": "1.6.0",
+        "metadata": { "test": "metadata" },
         "events": [
             {
                 "id": 1,

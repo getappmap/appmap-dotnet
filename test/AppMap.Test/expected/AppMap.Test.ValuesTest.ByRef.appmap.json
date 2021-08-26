@@ -53,5 +53,11 @@
       "thread_id": 1
     }
   ],
+  "metadata": {
+    "client": {
+      "name": "appmap-dotnet",
+      "url": "https://github.com/applandinc/appmap-dotnet/"
+    }
+  },
   "version": "1.6.0"
 }

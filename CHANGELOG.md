@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Capture thread id of events.
 - Capture method receiver.
 - Indicate the appmap spec version in the JSON output.
+- Add client metadata.
 
 ## [0.0.4] - 2021-08-01
 
