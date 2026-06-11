@@ -187,13 +187,13 @@ def record_web(app_dir, manifest, hook, config, out_dir, workdir):
                 proc.kill()
 
     maps = sorted(out_dir.rglob("*.appmap.json"))
-    # Surface the app's own log (seed/connection errors land here) so a CI
-    # failure is diagnosable without a local repro of the backing service.
-    if not ready or not maps:
-        tail = log_path.read_text(errors="replace").splitlines()[-40:]
-        log(f"--- {log_path.name} (tail) ---\n" + "\n".join(tail))
-        if not ready:
-            raise SystemExit("web app never became ready")
+    # Always surface the app's own log: a request can 500 (e.g. the backing
+    # service is unreachable) while the app is still "ready" and producing
+    # maps, so the error only lives here. Diagnosable without a local repro.
+    tail = log_path.read_text(errors="replace").splitlines()[-40:]
+    log(f"--- {log_path.name} (tail) ---\n" + "\n".join(tail))
+    if not ready:
+        raise SystemExit("web app never became ready")
     return maps
 
 

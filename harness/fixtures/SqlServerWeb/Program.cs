@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using SqlServerWeb;
 
@@ -16,6 +17,12 @@ builder.Services.AddScoped<WidgetService>();
 
 var app = builder.Build();
 
+// Log the target (no password) so a CI failure shows whether the connection
+// string was read from the environment or fell back to the default.
+var target = new SqlConnectionStringBuilder(connectionString);
+app.Logger.LogInformation("DB target server={Server} database={Db} user={User}",
+    target.DataSource, target.InitialCatalog, target.UserID);
+
 // Seed with retries: a SQL Server container can still be coming up. Never
 // crash the host on failure — /health must answer so the harness can drive it.
 using (var scope = app.Services.CreateScope())
@@ -26,7 +33,8 @@ using (var scope = app.Services.CreateScope())
         try { SeedData.Initialize(db); break; }
         catch (Exception e)
         {
-            app.Logger.LogWarning("seed attempt {Attempt} failed: {Message}", attempt, e.Message);
+            app.Logger.LogWarning("seed attempt {Attempt} failed: {Type}: {Message}",
+                attempt, e.GetType().Name, e.InnerException?.Message ?? e.Message);
             Thread.Sleep(3000);
         }
     }
