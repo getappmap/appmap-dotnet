@@ -54,7 +54,9 @@ packages touched:     ZeroTouchWeb.Widget, ZeroTouchWeb.WidgetContext, ZeroTouch
 
 Flags: `--workdir DIR` (where to clone/record), `--keep` (don't delete it),
 `--hook PATH` (use a prebuilt `AppMap.StartupHook.dll`, skipping the agent
-build).
+build), `--determinism` (web targets: record twice and assert the maps are
+structurally identical after dropping volatile fields — ids, timestamps,
+elapsed, headers, object_ids, value text).
 
 ## Zero-touch attach (web mode)
 

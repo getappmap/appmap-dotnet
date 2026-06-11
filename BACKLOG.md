@@ -52,11 +52,15 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
   against the Linux checkout. Proves record-on-Windows / query-on-Linux end
   to end, unblocked by Gap A.
 
+- ✅ **R5 — determinism assertion**. `run.py --determinism` records a web
+  target twice and asserts the maps are structurally identical after dropping
+  volatile fields (ids, timestamps, elapsed, headers, object_ids, value
+  text); wired into the `zero-touch-web` CI job. Verified it catches a
+  planted structural change while ignoring elapsed/id churn.
+
 Open:
 
 - **R1** — IIS / `System.Web` `IHttpModule` smoke on a Windows runner.
-- **R5** — determinism assertion: two identical replays → identical map
-  structure modulo volatile fields (ids, timestamps, durations).
 
 Original scope notes (for the deeper passes):
 

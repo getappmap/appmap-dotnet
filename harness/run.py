@@ -312,6 +312,82 @@ def report(stats):
     print(f"labels seen:          {', '.join(stats['labels']) or '(none)'}")
 
 
+# --- determinism (R5) ------------------------------------------------------
+
+def _norm_value(v):
+    # Keep the shape (name + type); drop the runtime value and object_id,
+    # which legitimately vary between runs.
+    return {"name": v.get("name"), "class": v.get("class")}
+
+
+def normalize_structure(doc):
+    """A map reduced to its structure: event/method/SQL/HTTP shape and the
+    classMap, with the volatile fields the spec allows to differ removed —
+    ids, parent_ids, elapsed, timestamps, headers, object_ids, value text."""
+    events = []
+    for e in doc.get("events", []):
+        n = {k: e[k] for k in ("event", "defined_class", "method_id", "static")
+             if k in e}
+        if e.get("http_server_request"):
+            h = e["http_server_request"]
+            n["http"] = {"method": h.get("request_method"),
+                         "path": h.get("path_info"),
+                         "route": h.get("normalized_path_info")}
+        if e.get("http_server_response"):
+            n["status"] = e["http_server_response"].get("status")
+        if e.get("sql_query"):
+            q = e["sql_query"]
+            n["sql"] = {"sql": q.get("sql"), "db": q.get("database_type")}
+        for vk in ("parameters", "message", "return_value", "receiver"):
+            val = e.get(vk)
+            if isinstance(val, list):
+                n[vk] = [_norm_value(x) for x in val]
+            elif isinstance(val, dict):
+                n[vk] = _norm_value(val)
+        if e.get("exceptions"):
+            n["exceptions"] = [{"class": x.get("class")} for x in e["exceptions"]]
+        events.append(n)
+
+    def node(c):
+        out = {"name": c.get("name"), "type": c.get("type")}
+        if c.get("labels"):
+            out["labels"] = sorted(c["labels"])
+        if c.get("location"):
+            out["location"] = c["location"]
+        if c.get("children"):
+            out["children"] = [node(ch) for ch in c["children"]]
+        return out
+
+    return {"events": events, "classMap": [node(r) for r in doc.get("classMap", [])]}
+
+
+def request_key(doc):
+    for e in doc.get("events", []):
+        h = e.get("http_server_request")
+        if h:
+            return (h.get("request_method"), h.get("path_info"))
+    return ("process", (doc.get("metadata", {}).get("recorder") or {}).get("type"))
+
+
+def compare_determinism(maps_a, maps_b):
+    def keyed(maps):
+        out = {}
+        for m in maps:
+            doc = json.loads(m.read_text())
+            out[request_key(doc)] = normalize_structure(doc)
+        return out
+
+    a, b = keyed(maps_a), keyed(maps_b)
+    errors = []
+    if set(a) != set(b):
+        errors.append(f"the two runs recorded different requests: "
+                      f"{sorted(set(a) ^ set(b))}")
+    for k in sorted(set(a) & set(b)):
+        if a[k] != b[k]:
+            errors.append(f"structure differs between runs for {k}")
+    return errors
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -319,6 +395,8 @@ def main():
     parser.add_argument("--workdir", help="where to clone/record (default: temp)")
     parser.add_argument("--keep", action="store_true", help="keep the workdir")
     parser.add_argument("--hook", help="prebuilt AppMap.StartupHook.dll (skips agent build)")
+    parser.add_argument("--determinism", action="store_true",
+                        help="record a web target twice and assert identical structure")
     args = parser.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text())
@@ -355,6 +433,23 @@ def main():
                 print(f"  - {e}")
             raise SystemExit(f"\nharness failed: {len(errors)} problem(s)")
         print("\nharness passed: all maps valid and coverage thresholds met.")
+
+        if args.determinism:
+            if mode != "web":
+                raise SystemExit("--determinism is supported for web targets only")
+            out_dir2 = workdir / "appmap2"
+            if out_dir2.exists():
+                shutil.rmtree(out_dir2)
+            log("recording a second time to check determinism")
+            maps2 = record_web(app_dir, manifest, hook, config, out_dir2, workdir)
+            diffs = compare_determinism(maps, maps2)
+            if diffs:
+                print("\n=== DETERMINISM FAILURES ===")
+                for d in diffs:
+                    print(f"  - {d}")
+                raise SystemExit(f"\nharness failed: {len(diffs)} determinism diff(s)")
+            print(f"determinism: all {len(maps)} maps reproduced identically "
+                  "(modulo ids, timestamps, durations, and values).")
     finally:
         if not args.keep:
             shutil.rmtree(workdir, ignore_errors=True)

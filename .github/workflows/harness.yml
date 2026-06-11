@@ -49,7 +49,9 @@ jobs:
       - name: Install AppMap CLI
         run: npm install -g @appland/appmap --ignore-scripts
       - name: Run harness against the zero-touch web fixture
-        run: python3 harness/run.py harness/targets/zerotouch-web.json
+        # --determinism records twice: the first pass is the coverage check,
+        # the second asserts the maps are structurally identical (R5).
+        run: python3 harness/run.py harness/targets/zerotouch-web.json --determinism
 
   # SQL capture against SQL Server (Microsoft.Data.SqlClient) — the provider
   # whose partial type-load on Linux exposed the SqlHooks bug that SQLite
