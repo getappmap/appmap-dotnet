@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- A deliberately ordinary ASP.NET Core + EF Core/SQLite app. It has NO
+       reference to any AppMap package and never calls UseAppMap(): the agent
+       attaches purely through DOTNET_STARTUP_HOOKS +
+       ASPNETCORE_HOSTINGSTARTUPASSEMBLIES. That is what makes it a real test
+       of the zero-touch attach. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ZeroTouchWeb</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,17 @@
+{
+  "name": "eShopOnWeb",
+  "repo": "https://github.com/dotnet-architecture/eShopOnWeb.git",
+  "ref": "main",
+  "prep": [
+    "echo '{\"version\":\"1.0\",\"libraries\":[]}' > src/Web/libman.json"
+  ],
+  "appmap_packages": ["Microsoft.eShopWeb"],
+  "build": "dotnet build tests/UnitTests/UnitTests.csproj -c Release && dotnet build tests/IntegrationTests/IntegrationTests.csproj -c Release",
+  "record": "dotnet test tests/UnitTests/UnitTests.csproj -c Release --no-build ; dotnet test tests/IntegrationTests/IntegrationTests.csproj -c Release --no-build",
+  "thresholds": {
+    "min_maps": 1,
+    "min_events": 150,
+    "min_classmap_functions": 40,
+    "expected_labels": ["crypto.digest"]
+  }
+}
