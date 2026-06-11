@@ -168,23 +168,33 @@ def record_web(app_dir, manifest, hook, config, out_dir, workdir):
     for db in app_dir.glob("*.db*"):
         db.unlink()
     log(f"launching {launch.name} on {base_url} (zero-touch attach)")
+    ready = False
     with open(log_path, "w") as logfile:
         proc = subprocess.Popen(f"dotnet {launch}", cwd=app_dir, env=env,
                                 shell=True, stdout=logfile, stderr=subprocess.STDOUT)
         try:
-            if not wait_ready(base_url, manifest.get("ready_path", "/"), timeout=90):
-                raise SystemExit(f"web app never became ready; see {log_path}")
-            for spec in manifest["requests"]:
-                status = http_call(base_url, spec)
-                log(f"  {spec.get('method', 'GET')} {spec['path']} -> {status}")
-            time.sleep(1)  # let the last request's map flush
+            ready = wait_ready(base_url, manifest.get("ready_path", "/"), timeout=120)
+            if ready:
+                for spec in manifest["requests"]:
+                    status = http_call(base_url, spec)
+                    log(f"  {spec.get('method', 'GET')} {spec['path']} -> {status}")
+                time.sleep(1)  # let the last request's map flush
         finally:
             proc.terminate()
             try:
                 proc.wait(timeout=15)
             except subprocess.TimeoutExpired:
                 proc.kill()
-    return sorted(out_dir.rglob("*.appmap.json"))
+
+    maps = sorted(out_dir.rglob("*.appmap.json"))
+    # Surface the app's own log (seed/connection errors land here) so a CI
+    # failure is diagnosable without a local repro of the backing service.
+    if not ready or not maps:
+        tail = log_path.read_text(errors="replace").splitlines()[-40:]
+        log(f"--- {log_path.name} (tail) ---\n" + "\n".join(tail))
+        if not ready:
+            raise SystemExit("web app never became ready")
+    return maps
 
 
 # --- validation + coverage -------------------------------------------------
