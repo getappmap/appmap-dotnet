@@ -53,6 +53,17 @@ public static class SqlHooks
         {
             types = assembly.GetTypes();
         }
+        catch (ReflectionTypeLoadException e)
+        {
+            // Providers are routinely only partially loadable (optional
+            // dependencies the app doesn't ship); patch the types that did
+            // load instead of bailing. Microsoft.Data.SqlClient on Linux
+            // hits this, and SqlCommand itself loads fine.
+            types = e.Types.Where(t => t is not null).Cast<Type>().ToArray();
+            Logger.Debug($"partial type load in {assembly.GetName().Name}: "
+                + $"{e.LoaderExceptions.Length} loader error(s), "
+                + $"{types.Length} usable type(s)");
+        }
         catch
         {
             return;
