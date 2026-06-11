@@ -70,3 +70,62 @@ jobs:
           if ($locations.Count -eq 0) {
             throw "Windows PDB fallback produced no source locations"
           }
+          # The path must be repo-relative with forward slashes, not the
+          # build machine's C:\...; this is what lets a Windows recording be
+          # queried on Linux (see the cross-platform-query job).
+          $abs = $locations | Where-Object { $_ -match '\\' -or $_ -match '^[A-Za-z]:[\\/]' }
+          if ($abs) { throw "absolute/backslash path(s) leaked: $abs" }
+
+      - name: Upload the Windows-recorded AppMap
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-appmaps
+          path: examples/HelloAppMap/tmp/appmap
+
+  # R4 cross-platform: a map RECORDED ON WINDOWS (above) must INDEX and QUERY
+  # ON LINUX, with its source paths resolving against a Linux checkout. This
+  # is the agent's headline claim and is only possible because SourceLocator
+  # emits repo-relative paths.
+  cross-platform-query:
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install AppMap CLI
+        run: |
+          npm install -g @appland/appmap --ignore-scripts
+          # index/query use better-sqlite3's native binding, skipped by --ignore-scripts.
+          ( cd "$(npm root -g)/@appland/appmap" && npm rebuild better-sqlite3 )
+      - name: Download the Windows-recorded AppMap
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-appmaps
+          path: windows-maps
+      - name: Index and query the Windows map on Linux
+        run: |
+          appmap index --appmap-dir windows-maps
+          map=$(find windows-maps -name '*.appmap.json' | head -1)
+          test -n "$map" || { echo "no map in artifact"; exit 1; }
+          appmap sequence-diagram -f json "$map" > /dev/null
+          echo "queried $map on Linux"
+      - name: Assert the Windows paths resolve against the Linux checkout
+        run: |
+          python3 - <<'PY'
+          import json, glob, os
+          maps = glob.glob('windows-maps/**/*.appmap.json', recursive=True)
+          assert maps, "no maps in artifact"
+          doc = json.load(open(maps[0]))
+          locs = set()
+          def walk(n):
+              if n.get('location'): locs.add(n['location'].split(':')[0])
+              for c in n.get('children', []): walk(c)
+          for r in doc.get('classMap', []): walk(r)
+          assert locs, "Windows map carried no source locations"
+          missing = [p for p in locs if not os.path.isfile(p)]
+          print("locations:", sorted(locs))
+          assert not missing, f"paths do not resolve on Linux: {missing}"
+          print(f"OK: {len(locs)} Windows-recorded path(s) resolve against the Linux checkout")
+          PY

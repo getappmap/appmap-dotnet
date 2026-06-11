@@ -46,11 +46,15 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
   provider; the partial-load extraction is also unit-tested directly so the
   guard holds even where the load doesn't fault.
 
+- ✅ **R4 Gap B — cross-platform acceptance test**. CI records a map on the
+  Windows runner, uploads it, and a Linux job (`cross-platform-query` in
+  `ci.yml`) indexes + queries it and asserts every source path resolves
+  against the Linux checkout. Proves record-on-Windows / query-on-Linux end
+  to end, unblocked by Gap A.
+
 Open:
 
 - **R1** — IIS / `System.Web` `IHttpModule` smoke on a Windows runner.
-- **R4 Gap B** — acceptance test: record maps on the Windows runner, index +
-  query them on Linux in CI (proves cross-platform now that paths are relative).
 - **R5** — determinism assertion: two identical replays → identical map
   structure modulo volatile fields (ids, timestamps, durations).
 
