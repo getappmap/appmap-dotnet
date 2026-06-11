@@ -1,0 +1,52 @@
+name: Agent harness (eShopOnWeb)
+
+# Records Microsoft's unmodified eShopOnWeb reference app under the agent and
+# validates every AppMap with the official CLI plus coverage thresholds.
+# Heavier than the unit CI (clones + builds an external repo), so it runs on
+# demand and weekly, and on changes to the agent or the harness.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+  push:
+    paths:
+      - "src/**"
+      - "harness/**"
+      - ".github/workflows/harness.yml"
+
+jobs:
+  # Method + label coverage: record Microsoft's unmodified eShopOnWeb test
+  # suite under the agent.
+  eshoponweb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install AppMap CLI
+        # --ignore-scripts skips fsevents' (macOS-only) native build.
+        run: npm install -g @appland/appmap --ignore-scripts
+      - name: Run harness against eShopOnWeb
+        run: python3 harness/run.py harness/targets/eshoponweb.json
+
+  # HTTP + SQL coverage: launch a web app that references no AppMap package
+  # and attach the agent purely through environment variables (the zero-touch
+  # HostingStartup), then assert per-request maps carry HTTP and SQL events.
+  zero-touch-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install AppMap CLI
+        run: npm install -g @appland/appmap --ignore-scripts
+      - name: Run harness against the zero-touch web fixture
+        run: python3 harness/run.py harness/targets/zerotouch-web.json

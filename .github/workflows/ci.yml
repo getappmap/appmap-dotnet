@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  # Linux: build everything and run the unit tests. The net472 / net462
+  # targets build here against the Microsoft.NETFramework.ReferenceAssemblies
+  # package (compile-only).
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        run: dotnet build AppMap.sln -c Release
+      - name: Test
+        run: dotnet test test/AppMap.Agent.Tests/AppMap.Agent.Tests.csproj -c Release --no-build
+
+  # Windows: real .NET Framework reference assemblies, and — the point of
+  # this job — actual validation of the classic (native) Windows PDB
+  # fallback. HelloAppMap is built with <DebugType>full</DebugType>, which
+  # produces a non-portable PDB, forcing SourceLocator down the
+  # WindowsPdbReader/diasymreader path. We then assert the recorded AppMap
+  # carries source locations, which only happens if that path works.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build solution
+        run: dotnet build AppMap.sln -c Release
+      - name: Test
+        run: dotnet test test/AppMap.Agent.Tests/AppMap.Agent.Tests.csproj -c Release --no-build
+
+      - name: Record HelloAppMap with a native (full) PDB
+        shell: pwsh
+        working-directory: examples/HelloAppMap
+        env:
+          APPMAP_RECORD_PROCESS: "true"
+          APPMAP_DEBUG: "true"
+        run: |
+          dotnet build -c Release -p:DebugType=full
+          $hook = "$PWD/../../src/AppMap.StartupHook/bin/Release/net8.0/AppMap.StartupHook.dll"
+          $env:DOTNET_STARTUP_HOOKS = (Resolve-Path $hook)
+          dotnet run -c Release --no-build
+
+      - name: Assert source locations resolved from the Windows PDB
+        shell: pwsh
+        working-directory: examples/HelloAppMap
+        run: |
+          $map = Get-ChildItem -Recurse tmp/appmap/process_recording/*.appmap.json |
+            Select-Object -First 1
+          if (-not $map) { throw "no AppMap was produced" }
+          $json = Get-Content $map.FullName -Raw | ConvertFrom-Json
+          $locations = @()
+          function Walk($node) {
+            if ($node.location) { $script:locations += $node.location }
+            foreach ($child in $node.children) { Walk $child }
+          }
+          foreach ($root in $json.classMap) { Walk $root }
+          Write-Host "resolved $($locations.Count) source location(s):"
+          $locations | ForEach-Object { Write-Host "  $_" }
+          if ($locations.Count -eq 0) {
+            throw "Windows PDB fallback produced no source locations"
+          }
