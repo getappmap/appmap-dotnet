@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AppMap.AspNetCore</RootNamespace>
+    <Description>ASP.NET Core integration for the AppMap .NET agent: HTTP event recording, per-request AppMaps, and remote recording endpoints.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../AppMap.Agent/AppMap.Agent.csproj" />
+  </ItemGroup>
+
+</Project>
