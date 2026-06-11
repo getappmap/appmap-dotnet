@@ -9,7 +9,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>SqlServerWeb</RootNamespace>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- NOT invariant: Microsoft.Data.SqlClient resolves a culture (en-US)
+         during SqlConnection.Open(), which throws CultureNotFoundException in
+         globalization-invariant mode. (The SQLite fixtures can stay invariant.) -->
   </PropertyGroup>
 
   <ItemGroup>
