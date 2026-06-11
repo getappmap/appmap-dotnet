@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AppMap.SystemWeb</RootNamespace>
+    <Description>Classic ASP.NET (System.Web) integration for the AppMap .NET agent: HTTP event recording, per-request AppMaps, and remote recording endpoints via an IHttpModule.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets the net472 target compile on non-Windows build machines. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AppMap.Agent/AppMap.Agent.csproj" />
+  </ItemGroup>
+
+</Project>
