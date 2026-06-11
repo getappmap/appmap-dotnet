@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AppMap</RootNamespace>
+    <Description>Source-level attributes for the AppMap .NET agent — the analog of appmap-java's annotation artifact. Dependency-free so applications can label code without referencing the agent.</Description>
+  </PropertyGroup>
+
+</Project>
