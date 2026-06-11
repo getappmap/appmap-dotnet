@@ -58,9 +58,15 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
   text); wired into the `zero-touch-web` CI job. Verified it catches a
   planted structural change while ignoring elapsed/id churn.
 
+- 🔄 **R1 — classic-ASP.NET `System.Web` smoke**. `fixtures/SystemWebApp`
+  (web.config-registered `IHttpModule`, no AppMap source reference) hosted on
+  IIS Express in the `system-web-iis` Windows CI job, asserting a per-request
+  AppMap with an `http_server_request` event. Validated in CI (no local
+  Windows/IIS repro).
+
 Open:
 
-- **R1** — IIS / `System.Web` `IHttpModule` smoke on a Windows runner.
+- (none of the gap-analysis R1–R8 items remain; deepen RCA-findings next.)
 
 Original scope notes (for the deeper passes):
 

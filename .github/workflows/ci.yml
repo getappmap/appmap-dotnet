@@ -129,3 +129,59 @@ jobs:
           assert not missing, f"paths do not resolve on Linux: {missing}"
           print(f"OK: {len(locs)} Windows-recorded path(s) resolve against the Linux checkout")
           PY
+
+  # R1: validate the classic-ASP.NET (System.Web) IHttpModule actually records
+  # on a real IIS host (IIS Express) — the legacy .NET Framework attach path,
+  # which the unit/PDB jobs don't exercise. The app references no AppMap
+  # source; the agent attaches only by being registered in web.config.
+  system-web-iis:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build the System.Web module (net472)
+        run: dotnet build src/AppMap.SystemWeb/AppMap.SystemWeb.csproj -c Release
+      - name: Record a request through IIS Express
+        shell: pwsh
+        run: |
+          $site = Join-Path $env:RUNNER_TEMP "site"
+          New-Item -ItemType Directory -Force (Join-Path $site "bin") | Out-Null
+          Copy-Item harness/fixtures/SystemWebApp/* $site -Recurse -Force
+          # Drop the agent (module + Agent + Harmony + deps) into the app's bin.
+          Copy-Item src/AppMap.SystemWeb/bin/Release/net472/*.dll (Join-Path $site "bin") -Force
+
+          $env:APPMAP_CONFIG_FILE = Join-Path $site "appmap.yml"
+          $env:APPMAP_OUTPUT_DIRECTORY = Join-Path $site "tmp\appmap"
+          $env:APPMAP_DEBUG = "true"
+
+          $exe = "C:\Program Files\IIS Express\iisexpress.exe"
+          if (-not (Test-Path $exe)) { $exe = "C:\Program Files (x86)\IIS Express\iisexpress.exe" }
+          if (-not (Test-Path $exe)) { throw "IIS Express not found on the runner" }
+
+          $proc = Start-Process $exe -ArgumentList "/path:$site","/port:8088" -PassThru
+          try {
+            $served = $false
+            for ($i = 0; $i -lt 30; $i++) {
+              try {
+                (Invoke-WebRequest "http://localhost:8088/Default.aspx" -UseBasicParsing).Content | Out-Null
+                $served = $true; break
+              } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $served) { throw "IIS Express never served the app" }
+            Start-Sleep -Seconds 1   # let the end-request hook flush the map
+          } finally {
+            Stop-Process -Id $proc.Id -Force
+          }
+
+      - name: Assert the module produced a request AppMap
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "site\tmp\appmap"
+          $maps = Get-ChildItem -Recurse $dir -Filter *.appmap.json -ErrorAction SilentlyContinue
+          if (-not $maps) { throw "no AppMap produced by the System.Web module" }
+          $json = Get-Content $maps[0].FullName -Raw | ConvertFrom-Json
+          $http = $json.events | Where-Object { $_.http_server_request } | Select-Object -First 1
+          if (-not $http) { throw "map has no http_server_request event" }
+          Write-Host "System.Web module recorded $($http.http_server_request.request_method) $($http.http_server_request.path_info)"

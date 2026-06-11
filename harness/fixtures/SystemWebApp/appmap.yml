@@ -1,0 +1,4 @@
+name: SystemWebApp
+appmap_dir: tmp/appmap
+packages:
+- path: SystemWebApp
