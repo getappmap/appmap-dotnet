@@ -1,0 +1,9 @@
+bin/
+obj/
+*.user
+**/tmp/appmap/
+
+# SQLite runtime databases (PetClinic example)
+*.db
+*.db-shm
+*.db-wal
