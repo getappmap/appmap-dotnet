@@ -1,0 +1,4 @@
+name: petclinic
+appmap_dir: tmp/appmap
+packages:
+- path: PetClinic

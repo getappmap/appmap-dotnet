@@ -1,0 +1,57 @@
+@startuml
+!includeurl https://raw.githubusercontent.com/getappmap/plantuml-theme/main/appmap-theme.puml
+participant HTTP_server_requests as "HTTP server requests"
+participant Data as "Data"
+participant Services as "Services"
+participant Controllers as "Controllers"
+participant Models as "Models"
+participant Database as "Database"
+  [->HTTP_server_requests: GET /owners <color:gray> 155 ms</color>
+  activate HTTP_server_requests
+    HTTP_server_requests->Data: .ctor <color:gray> 0.131 ms</color>
+    activate Data
+    HTTP_server_requests<--Data: void
+    deactivate Data
+    HTTP_server_requests->Services: .ctor <color:gray> 0.000868 ms</color>
+    activate Services
+    HTTP_server_requests<--Services: void
+    deactivate Services
+    HTTP_server_requests->Controllers: .ctor <color:gray> 0.000603 ms</color>
+    activate Controllers
+    HTTP_server_requests<--Controllers: void
+    deactivate Controllers
+    HTTP_server_requests->Controllers: List <color:gray> 146 ms</color>
+    activate Controllers
+      Controllers->Services: FindAll <color:gray> 146 ms</color>
+      activate Services
+        Services->Database: SELECT "o"."Id", "o"."City", "o"."FirstName", "o". <color:gray> 0.134 ms</color>
+        Note right
+SELECT "o"."Id", "o"."City", "o"."FirstName", "o"."LastName", "p"."Id",
+"p"."Name", "p"."OwnerId", "p"."Type" FROM "Owners" AS "o" LEFT JOIN "Pets" AS
+"p" ON "o"."Id" = "p"."OwnerId" ORDER BY "o"."Id"
+        End note
+        Services->Models: .ctor <color:gray> 0.00211 ms</color>
+        activate Models
+        Services<--Models: void
+        deactivate Models
+        Services->Models: .ctor <color:gray> 0.00146 ms</color>
+        activate Models
+        Services<--Models: void
+        deactivate Models
+        Services->Models: .ctor <color:gray> 0.00125 ms</color>
+        activate Models
+        Services<--Models: void
+        deactivate Models
+        Loop 2 times <color:gray> 0.00201 ms</color>
+          Services->Models: .ctor <color:gray> 0.00201 ms</color>
+          activate Models
+          Services<--Models: void
+          deactivate Models
+        End
+      Controllers<--Services: System.Collections.Generic.List`1[[PetClinic.Model
+      deactivate Services
+    HTTP_server_requests<--Controllers: System.Collections.Generic.List`1[[PetClinic.Model
+    deactivate Controllers
+  [<--HTTP_server_requests: 200
+  deactivate HTTP_server_requests
+@enduml
