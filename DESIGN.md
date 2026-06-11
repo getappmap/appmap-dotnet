@@ -193,6 +193,13 @@ PDBs** fall back to the native `diasymreader` COM binder
 validated on a real Windows runner in CI (it resolves locations from a native
 `full` PDB; the assertion is hard-failing).
 
+PDBs embed the **absolute build-machine path**, so `SourceLocator` relativizes
+every path against the repo root (git root, then the appmap.yml directory) and
+normalizes to forward slashes — like `appmap-java`. Without this a map
+recorded on Windows (`C:\agent\work\repo\src\X.cs`) would not resolve against
+the same repo checked out on Linux; with it, both sides see
+`src/X.cs`. The harness asserts no map carries an absolute or backslash path.
+
 ## 10. Test harness (`harness/`)
 
 App-agnostic, manifest-driven. Records real apps under the agent and

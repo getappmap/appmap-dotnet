@@ -61,6 +61,20 @@ public sealed class GitMetadata
         };
     }
 
+    /// <summary>
+    /// The working-tree root (the directory containing <c>.git</c>), or null
+    /// when not in a git checkout. Used to relativize source paths so maps
+    /// recorded on one machine/OS resolve on another.
+    /// </summary>
+    public static string? RepositoryRoot
+    {
+        get
+        {
+            var gitDir = FindGitDir();
+            return gitDir == null ? null : Path.GetDirectoryName(gitDir);
+        }
+    }
+
     private static string? FindGitDir()
     {
         var dir = new DirectoryInfo(Directory.GetCurrentDirectory());

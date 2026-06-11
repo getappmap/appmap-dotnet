@@ -7,6 +7,39 @@ namespace AppMap.Agent.Tests;
 public class SourceLocatorTests
 {
     [Fact]
+    public void RelativizesLinuxPathAgainstProjectRoot()
+    {
+        Assert.Equal("src/Web/Index.cs", SourceLocator.RelativizeAgainst(
+            "/home/user/eShopOnWeb/src/Web/Index.cs",
+            new[] { "/home/user/eShopOnWeb" }));
+    }
+
+    [Fact]
+    public void RelativizesWindowsPathWithForwardSlashes()
+    {
+        // A map recorded on Windows must query identically on Linux.
+        Assert.Equal("src/Web/Index.cs", SourceLocator.RelativizeAgainst(
+            @"C:\agent\work\eShopOnWeb\src\Web\Index.cs",
+            new[] { @"C:\agent\work\eShopOnWeb" }));
+    }
+
+    [Fact]
+    public void PrefersTheFirstMatchingRoot()
+    {
+        // First root wins; ResolveRoots lists the git/repo root first.
+        Assert.Equal("service/Index.cs", SourceLocator.RelativizeAgainst(
+            "/repo/service/Index.cs",
+            new[] { "/repo", "/repo/service" }));
+    }
+
+    [Fact]
+    public void LeavesOutOfTreePathsButNormalizesSlashes()
+    {
+        Assert.Equal("D:/nuget/lib/Foo.cs", SourceLocator.RelativizeAgainst(
+            @"D:\nuget\lib\Foo.cs", new[] { @"C:\app" }));
+    }
+
+    [Fact]
     public void WindowsPdbFallbackIsGatedToWindows()
     {
         Assert.Equal(

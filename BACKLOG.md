@@ -23,8 +23,32 @@ Remaining depth to add:
   N+1, an unauthenticated endpoint, a logged secret, and a
   `BinaryFormatter.Deserialize`, then assert AppMap's analysis flags each.
   Builds on the events + label taxonomy the harness already exercises.
+  (`@appland/scanner` provides the rules: `n-plus-one-query`, `secret-in-log`,
+  `deserialization-of-untrusted-data`, etc.)
 - **A large real app in `web` mode**: eShop/nopCommerce against a real
   relational DB (Postgres/SQL Server), which needs container infra in CI.
+
+## 1a. Study gap-analysis follow-ups (R1–R8)
+
+From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
+
+- ✅ **SqlHooks partial-load fix** — `Assembly.GetTypes()` threw
+  `ReflectionTypeLoadException` on `Microsoft.Data.SqlClient` (1 unloadable
+  type on Linux) and the wholesale catch discarded all 644 loadable types,
+  including `SqlCommand` → **0 SQL captured**. Now patches the loadable
+  subset (0 → 36 `sql_query` against SQL Server). SQLite-only harness is why
+  it slipped; **add a SQL Server web-mode target** to close the gap.
+- ✅ **R4 Gap A — relative source paths**. `SourceLocator` now emits paths
+  relative to the repo root with forward slashes; harness guards it.
+
+Open:
+
+- **SQL Server `web` target** in the harness (needs an mssql container in CI).
+- **R1** — IIS / `System.Web` `IHttpModule` smoke on a Windows runner.
+- **R4 Gap B** — acceptance test: record maps on the Windows runner, index +
+  query them on Linux in CI (proves cross-platform now that paths are relative).
+- **R5** — determinism assertion: two identical replays → identical map
+  structure modulo volatile fields (ids, timestamps, durations).
 
 Original scope notes (for the deeper passes):
 

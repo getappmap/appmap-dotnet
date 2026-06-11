@@ -162,9 +162,14 @@ def record_web(app_dir, manifest, hook, config, out_dir, workdir):
         "ASPNETCORE_URLS": base_url,
     })
     log_path = workdir / "server.log"
+    # Launch from the app's own directory so the agent resolves the git root
+    # (and relativizes source paths) the way a normally-run app would. Clean
+    # any stale SQLite files first (a leftover -wal can fault the next run).
+    for db in app_dir.glob("*.db*"):
+        db.unlink()
     log(f"launching {launch.name} on {base_url} (zero-touch attach)")
     with open(log_path, "w") as logfile:
-        proc = subprocess.Popen(f"dotnet {launch}", cwd=workdir, env=env,
+        proc = subprocess.Popen(f"dotnet {launch}", cwd=app_dir, env=env,
                                 shell=True, stdout=logfile, stderr=subprocess.STDOUT)
         try:
             if not wait_ready(base_url, manifest.get("ready_path", "/"), timeout=90):
@@ -195,7 +200,27 @@ def structural_check(doc):
         if e.get("event") == "return" and e.get("parent_id") not in call_ids:
             problems.append(f"return event {e['id']} has no matching call")
             break
+
+    # Paths must be repo-relative with forward slashes, or a map recorded on
+    # one machine/OS won't resolve on another (the R4 cross-platform
+    # requirement). Guards against the SourceLocator regressing to absolute.
+    def is_bad(p):
+        return p.startswith("/") or "\\" in p or (len(p) > 1 and p[1] == ":")
+    paths = [n["location"] for n in iter_classmap(doc) if n.get("location")]
+    paths += [e["path"] for e in events if e.get("path")]
+    bad = next((p for p in paths if is_bad(p)), None)
+    if bad:
+        problems.append(f"non-relative source path: {bad}")
     return problems
+
+
+def iter_classmap(doc):
+    def walk(node):
+        yield node
+        for child in node.get("children", []):
+            yield from walk(child)
+    for root in doc.get("classMap", []):
+        yield from walk(root)
 
 
 def cli_accepts(map_path):

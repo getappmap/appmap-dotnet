@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
+using AppMap.Config;
 
 namespace AppMap.Util;
 
@@ -11,9 +12,54 @@ namespace AppMap.Util;
 /// are read directly; classic Windows PDBs fall back to the native
 /// diasymreader binder (Windows only). Best-effort: returns nulls when no
 /// usable PDB sits next to the assembly.
+///
+/// Paths are emitted relative to the project root (the appmap.yml directory,
+/// then the git root) with forward slashes — like appmap-java — so a map
+/// recorded on Windows (<c>C:\src\repo\...</c>) resolves against the same
+/// repo checked out on Linux. PDBs embed the absolute build-machine path, so
+/// without this, cross-platform queries (record on Windows, analyze on Linux)
+/// break.
 /// </summary>
 public static class SourceLocator
 {
+    private static readonly Lazy<string[]> Roots = new(ResolveRoots);
+
+    private static string[] ResolveRoots()
+    {
+        var roots = new List<string>();
+        // Repo root (git) first — "relative to the repo root" is what the CLI
+        // and IDE resolve against. The appmap.yml directory is a fallback for
+        // apps run outside a git checkout (e.g. a published deployment).
+        var gitRoot = GitMetadata.RepositoryRoot;
+        if (!string.IsNullOrEmpty(gitRoot))
+            roots.Add(gitRoot!);
+        var baseDir = AppMapConfig.Current.BaseDirectory;
+        if (!string.IsNullOrEmpty(baseDir) && !roots.Contains(baseDir))
+            roots.Add(baseDir);
+        return roots.ToArray();
+    }
+
+    /// <summary>
+    /// Makes an absolute PDB document path relative to the project/git root
+    /// and normalizes separators to '/'. Out-of-tree paths (e.g. third-party
+    /// sources) keep their location but still get forward slashes. Pure;
+    /// exposed for tests.
+    /// </summary>
+    internal static string RelativizeAgainst(string path, IEnumerable<string> roots)
+    {
+        var normalized = path.Replace('\\', '/');
+        foreach (var root in roots)
+        {
+            if (string.IsNullOrEmpty(root))
+                continue;
+            var r = root.Replace('\\', '/').TrimEnd('/');
+            if (r.Length > 0 &&
+                normalized.StartsWith(r + "/", StringComparison.OrdinalIgnoreCase))
+                return normalized.Substring(r.Length + 1);
+        }
+        return normalized;
+    }
+
     private abstract class PdbSource
     {
         public abstract (string? Path, int? LineNo) Locate(MethodBase method);
@@ -26,7 +72,8 @@ public static class SourceLocator
         try
         {
             var source = sources.GetOrAdd(method.Module.Assembly, Open);
-            return source?.Locate(method) ?? (null, null);
+            var (path, lineNo) = source?.Locate(method) ?? (null, null);
+            return (path == null ? null : RelativizeAgainst(path, Roots.Value), lineNo);
         }
         catch (Exception e)
         {
