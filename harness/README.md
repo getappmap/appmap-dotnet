@@ -129,7 +129,10 @@ unmet thresholds do).
 
 `web` mode adds `launch` (the built DLL to run), `ready_path` (polled until
 the server answers), and `requests` (the HTTP calls to drive, each
-`{method, path, json?}`). See `targets/zerotouch-web.json`.
+`{method, path, json?}`). See `targets/zerotouch-web.json` (SQLite) and
+`targets/sqlserver-web.json` (SQL Server — the `sql-server-web` CI job runs
+it against an mssql service container, since that provider, not SQLite, is
+what exposed the SqlHooks partial-load bug).
 
 ## Known scope
 

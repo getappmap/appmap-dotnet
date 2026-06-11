@@ -40,10 +40,14 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
   it slipped; **add a SQL Server web-mode target** to close the gap.
 - ✅ **R4 Gap A — relative source paths**. `SourceLocator` now emits paths
   relative to the repo root with forward slashes; harness guards it.
+- ✅ **SQL Server `web` target** (`fixtures/SqlServerWeb` +
+  `targets/sqlserver-web.json` + a `sql-server-web` CI job with an mssql
+  service container). Regression-guards the SqlHooks fix against the actual
+  provider; the partial-load extraction is also unit-tested directly so the
+  guard holds even where the load doesn't fault.
 
 Open:
 
-- **SQL Server `web` target** in the harness (needs an mssql container in CI).
 - **R1** — IIS / `System.Web` `IHttpModule` smoke on a Windows runner.
 - **R4 Gap B** — acceptance test: record maps on the Windows runner, index +
   query them on Linux in CI (proves cross-platform now that paths are relative).

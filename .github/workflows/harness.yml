@@ -50,3 +50,33 @@ jobs:
         run: npm install -g @appland/appmap --ignore-scripts
       - name: Run harness against the zero-touch web fixture
         run: python3 harness/run.py harness/targets/zerotouch-web.json
+
+  # SQL capture against SQL Server (Microsoft.Data.SqlClient) — the provider
+  # whose partial type-load on Linux exposed the SqlHooks bug that SQLite
+  # never would. Regression-guards that fix end to end.
+  sql-server-web:
+    runs-on: ubuntu-latest
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: "Appmap!Harness2026"
+        ports:
+          - 1433:1433
+    env:
+      # The fixture reads this; the app retries until the container accepts
+      # connections, so no service health check is needed.
+      ConnectionStrings__Default: "Server=localhost,1433;Database=AppMapHarness;User Id=sa;Password=Appmap!Harness2026;TrustServerCertificate=True;Encrypt=False"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install AppMap CLI
+        run: npm install -g @appland/appmap --ignore-scripts
+      - name: Run harness against the SQL Server web fixture
+        run: python3 harness/run.py harness/targets/sqlserver-web.json
