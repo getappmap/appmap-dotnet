@@ -33,6 +33,16 @@ public static class SqlHooks
             Scan(assembly);
     }
 
+    /// <summary>
+    /// The non-null types from a partial load. A provider assembly that fails
+    /// to fully load (e.g. Microsoft.Data.SqlClient on Linux, with one
+    /// unloadable type) must not cause every loadable type — including
+    /// SqlCommand — to be discarded, or no SQL is ever recorded. Exposed for
+    /// tests; the failure is environment-specific so this guards the logic.
+    /// </summary>
+    internal static Type[] LoadableTypes(ReflectionTypeLoadException e) =>
+        e.Types.Where(t => t is not null).Cast<Type>().ToArray();
+
     private static void Scan(Assembly assembly)
     {
         lock (gate)
@@ -59,7 +69,7 @@ public static class SqlHooks
             // dependencies the app doesn't ship); patch the types that did
             // load instead of bailing. Microsoft.Data.SqlClient on Linux
             // hits this, and SqlCommand itself loads fine.
-            types = e.Types.Where(t => t is not null).Cast<Type>().ToArray();
+            types = LoadableTypes(e);
             Logger.Debug($"partial type load in {assembly.GetName().Name}: "
                 + $"{e.LoaderExceptions.Length} loader error(s), "
                 + $"{types.Length} usable type(s)");
