@@ -58,15 +58,16 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
   text); wired into the `zero-touch-web` CI job. Verified it catches a
   planted structural change while ignoring elapsed/id churn.
 
-- 🔄 **R1 — classic-ASP.NET `System.Web` smoke**. `fixtures/SystemWebApp`
+- ✅ **R1 — classic-ASP.NET `System.Web` smoke**. `fixtures/SystemWebApp`
   (web.config-registered `IHttpModule`, no AppMap source reference) hosted on
   IIS Express in the `system-web-iis` Windows CI job, asserting a per-request
-  AppMap with an `http_server_request` event. Validated in CI (no local
-  Windows/IIS repro).
+  AppMap with an `http_server_request` event — **green in CI**. Surfaced a
+  real deployment requirement: under .NET Framework the netstandard2.0 agent
+  needs binding redirects for its transitive `System.*` assemblies (the job
+  generates them; documented in the README).
 
-Open:
-
-- (none of the gap-analysis R1–R8 items remain; deepen RCA-findings next.)
+**All gap-analysis items R1–R8 are now done and CI-verified.** Next frontier:
+the RCA-findings depth (`@appland/scanner` over planted anti-patterns).
 
 Original scope notes (for the deeper passes):
 

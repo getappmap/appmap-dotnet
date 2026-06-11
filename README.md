@@ -126,6 +126,15 @@ for you. For classic ASP.NET, `AppMap.SystemWeb` provides the
 </system.webServer>
 ```
 
+Because the agent is netstandard2.0, a .NET Framework host needs **binding
+redirects** for its transitive `System.*` package assemblies (e.g.
+`System.Text.Json`, `System.Memory`) — otherwise they throw
+`FileLoadException` and the module records nothing. A project reference with
+`<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>` produces
+them; the `system-web-iis` CI job shows generating them from the deployed
+assemblies for a website. (This requirement is exercised end-to-end on a
+real IIS Express host in CI.)
+
 Build with `<DebugType>portable</DebugType>` (supported since VS2017) for
 source locations; classic Windows PDBs are read best-effort through the
 native diasymreader binder on Windows. NativeAOT and IL-trimmed apps are
