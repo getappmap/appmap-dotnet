@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>DOTNET_STARTUP_HOOKS entry point for the AppMap .NET agent.</Description>
+    <!-- The hook resolves AppMap.Agent and its dependencies from its own
+         directory, so the build output must be a complete agent deployment. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AppMap.Agent/AppMap.Agent.csproj" />
+    <!-- Shipped alongside the agent so the assembly-resolve handler can load
+         it for the zero-touch HostingStartup attach
+         (ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=AppMap.AspNetCore). The hook
+         itself never references AspNetCore types; the DLL is loaded on demand
+         only inside an ASP.NET Core host. -->
+    <ProjectReference Include="../AppMap.AspNetCore/AppMap.AspNetCore.csproj" />
+  </ItemGroup>
+
+</Project>
