@@ -7,3 +7,7 @@ obj/
 *.db
 *.db-shm
 *.db-wal
+
+# Python bytecode (harness tooling)
+__pycache__/
+*.pyc
