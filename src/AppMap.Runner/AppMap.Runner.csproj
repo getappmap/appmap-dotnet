@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AppMap.Runner</RootNamespace>
+    <Description>Runs a .NET command with the AppMap agent attached (no code changes).</Description>
+    <!-- dotnet tool: install AppMap.Runner, then run `appmap-dotnet <command>` -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>appmap-dotnet</ToolCommandName>
+    <PackageId>AppMap.Runner</PackageId>
+    <Authors>AppMap, Inc.</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- The runner's output directory must be a complete agent deployment:
+         the startup hook, agent, and integrations are resolved from it. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AppMap.StartupHook/AppMap.StartupHook.csproj" />
+  </ItemGroup>
+
+</Project>

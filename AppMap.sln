@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppMap.Attributes", "src\Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppMap.SystemWeb", "src\AppMap.SystemWeb\AppMap.SystemWeb.csproj", "{3E63E126-93C9-4E74-B227-64AA8EE2C50F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppMap.Runner", "src\AppMap.Runner\AppMap.Runner.csproj", "{1B08E2C9-1C2C-4E88-9039-60930E91C364}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,6 +74,10 @@ Global
 		{3E63E126-93C9-4E74-B227-64AA8EE2C50F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E63E126-93C9-4E74-B227-64AA8EE2C50F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E63E126-93C9-4E74-B227-64AA8EE2C50F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B08E2C9-1C2C-4E88-9039-60930E91C364}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B08E2C9-1C2C-4E88-9039-60930E91C364}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B08E2C9-1C2C-4E88-9039-60930E91C364}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B08E2C9-1C2C-4E88-9039-60930E91C364}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +86,6 @@ Global
 		{95076417-54BC-4F31-A7FF-2F5A5380F5A9} = {24212A48-1590-42F2-8A12-7A972CF0644B}
 		{2F012F7B-B729-4256-AECB-4AA7441113C8} = {3B997D78-7003-4D00-8627-2200251B6C40}
 		{3E63E126-93C9-4E74-B227-64AA8EE2C50F} = {3B997D78-7003-4D00-8627-2200251B6C40}
+		{1B08E2C9-1C2C-4E88-9039-60930E91C364} = {3B997D78-7003-4D00-8627-2200251B6C40}
 	EndGlobalSection
 EndGlobal
