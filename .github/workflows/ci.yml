@@ -1,5 +1,7 @@
 name: CI
 
+# Workflows stay thin: each job builds/tests and calls a script under
+# scripts/ci/, so the test logic can be run and iterated on locally.
 on:
   push:
     branches: ["**"]
@@ -20,13 +22,11 @@ jobs:
         run: dotnet build AppMap.sln -c Release
       - name: Test
         run: dotnet test test/AppMap.Agent.Tests/AppMap.Agent.Tests.csproj -c Release --no-build
+      - name: Runner smoke (zero-touch PetClinic via appmap-dotnet)
+        run: bash scripts/ci/runner-smoke.sh
 
-  # Windows: real .NET Framework reference assemblies, and — the point of
-  # this job — actual validation of the classic (native) Windows PDB
-  # fallback. HelloAppMap is built with <DebugType>full</DebugType>, which
-  # produces a non-portable PDB, forcing SourceLocator down the
-  # WindowsPdbReader/diasymreader path. We then assert the recorded AppMap
-  # carries source locations, which only happens if that path works.
+  # Windows: build + test on real .NET Framework reference assemblies, then
+  # validate the classic (native) Windows PDB fallback for real.
   windows:
     runs-on: windows-latest
     steps:
@@ -38,44 +38,9 @@ jobs:
         run: dotnet build AppMap.sln -c Release
       - name: Test
         run: dotnet test test/AppMap.Agent.Tests/AppMap.Agent.Tests.csproj -c Release --no-build
-
-      - name: Record HelloAppMap with a native (full) PDB
+      - name: Windows PDB smoke (record + assert relative source locations)
         shell: pwsh
-        working-directory: examples/HelloAppMap
-        env:
-          APPMAP_RECORD_PROCESS: "true"
-          APPMAP_DEBUG: "true"
-        run: |
-          dotnet build -c Release -p:DebugType=full
-          $hook = "$PWD/../../src/AppMap.StartupHook/bin/Release/net8.0/AppMap.StartupHook.dll"
-          $env:DOTNET_STARTUP_HOOKS = (Resolve-Path $hook)
-          dotnet run -c Release --no-build
-
-      - name: Assert source locations resolved from the Windows PDB
-        shell: pwsh
-        working-directory: examples/HelloAppMap
-        run: |
-          $map = Get-ChildItem -Recurse tmp/appmap/process_recording/*.appmap.json |
-            Select-Object -First 1
-          if (-not $map) { throw "no AppMap was produced" }
-          $json = Get-Content $map.FullName -Raw | ConvertFrom-Json
-          $locations = @()
-          function Walk($node) {
-            if ($node.location) { $script:locations += $node.location }
-            foreach ($child in $node.children) { Walk $child }
-          }
-          foreach ($root in $json.classMap) { Walk $root }
-          Write-Host "resolved $($locations.Count) source location(s):"
-          $locations | ForEach-Object { Write-Host "  $_" }
-          if ($locations.Count -eq 0) {
-            throw "Windows PDB fallback produced no source locations"
-          }
-          # The path must be repo-relative with forward slashes, not the
-          # build machine's C:\...; this is what lets a Windows recording be
-          # queried on Linux (see the cross-platform-query job).
-          $abs = $locations | Where-Object { $_ -match '\\' -or $_ -match '^[A-Za-z]:[\\/]' }
-          if ($abs) { throw "absolute/backslash path(s) leaked: $abs" }
-
+        run: ./scripts/ci/windows-pdb-smoke.ps1
       - name: Upload the Windows-recorded AppMap
         uses: actions/upload-artifact@v4
         with:
@@ -83,9 +48,7 @@ jobs:
           path: examples/HelloAppMap/tmp/appmap
 
   # R4 cross-platform: a map RECORDED ON WINDOWS (above) must INDEX and QUERY
-  # ON LINUX, with its source paths resolving against a Linux checkout. This
-  # is the agent's headline claim and is only possible because SourceLocator
-  # emits repo-relative paths.
+  # ON LINUX, with its source paths resolving against a Linux checkout.
   cross-platform-query:
     needs: windows
     runs-on: ubuntu-latest
@@ -104,36 +67,12 @@ jobs:
         with:
           name: windows-appmaps
           path: windows-maps
-      - name: Index and query the Windows map on Linux
-        run: |
-          appmap index --appmap-dir windows-maps
-          map=$(find windows-maps -name '*.appmap.json' | head -1)
-          test -n "$map" || { echo "no map in artifact"; exit 1; }
-          appmap sequence-diagram -f json "$map" > /dev/null
-          echo "queried $map on Linux"
-      - name: Assert the Windows paths resolve against the Linux checkout
-        run: |
-          python3 - <<'PY'
-          import json, glob, os
-          maps = glob.glob('windows-maps/**/*.appmap.json', recursive=True)
-          assert maps, "no maps in artifact"
-          doc = json.load(open(maps[0]))
-          locs = set()
-          def walk(n):
-              if n.get('location'): locs.add(n['location'].split(':')[0])
-              for c in n.get('children', []): walk(c)
-          for r in doc.get('classMap', []): walk(r)
-          assert locs, "Windows map carried no source locations"
-          missing = [p for p in locs if not os.path.isfile(p)]
-          print("locations:", sorted(locs))
-          assert not missing, f"paths do not resolve on Linux: {missing}"
-          print(f"OK: {len(locs)} Windows-recorded path(s) resolve against the Linux checkout")
-          PY
+      - name: Index + query the Windows map on Linux
+        run: bash scripts/ci/check-windows-maps-on-linux.sh windows-maps
 
-  # R1: validate the classic-ASP.NET (System.Web) IHttpModule actually records
-  # on a real IIS host (IIS Express) — the legacy .NET Framework attach path,
-  # which the unit/PDB jobs don't exercise. The app references no AppMap
-  # source; the agent attaches only by being registered in web.config.
+  # Classic-ASP.NET (System.Web) IHttpModule on a real IIS host (IIS Express).
+  # The app references no AppMap source; the agent attaches only via its
+  # module registration in web.config.
   system-web-iis:
     runs-on: windows-latest
     steps:
@@ -143,73 +82,6 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Build the System.Web module (net472)
         run: dotnet build src/AppMap.SystemWeb/AppMap.SystemWeb.csproj -c Release
-      - name: Record a request through IIS Express
+      - name: IIS Express smoke (record + assert per-request map)
         shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $site = Join-Path $env:RUNNER_TEMP "site"
-          New-Item -ItemType Directory -Force (Join-Path $site "bin") | Out-Null
-          Copy-Item harness/fixtures/SystemWebApp/* $site -Recurse -Force
-          # Drop the agent (module + Agent + Harmony + deps) into the app's bin.
-          Copy-Item src/AppMap.SystemWeb/bin/Release/net472/*.dll (Join-Path $site "bin") -Force
-
-          # The agent is netstandard2.0; under .NET Framework its transitive
-          # System.* package assemblies need binding redirects or they throw
-          # FileLoadException at runtime (and the module silently records
-          # nothing). Generate redirects from the actual bin assemblies.
-          $deps = ""
-          Get-ChildItem (Join-Path $site "bin\*.dll") | ForEach-Object {
-            try {
-              $an = [System.Reflection.AssemblyName]::GetAssemblyName($_.FullName)
-              $tokenBytes = $an.GetPublicKeyToken()
-              if ($tokenBytes -and $tokenBytes.Length -gt 0) {
-                $token = ($tokenBytes | ForEach-Object { $_.ToString("x2") }) -join ""
-                $deps += "<dependentAssembly><assemblyIdentity name='$($an.Name)' publicKeyToken='$token' culture='neutral' /><bindingRedirect oldVersion='0.0.0.0-$($an.Version)' newVersion='$($an.Version)' /></dependentAssembly>"
-              }
-            } catch {}
-          }
-          $runtime = "<runtime><assemblyBinding xmlns='urn:schemas-microsoft-com:asm.v1'>$deps</assemblyBinding></runtime>"
-          $cfg = Join-Path $site "web.config"
-          (Get-Content $cfg -Raw) -replace '</configuration>', "$runtime</configuration>" | Set-Content $cfg
-          Write-Host "injected $((($deps -split '</dependentAssembly>').Count) - 1) binding redirect(s)"
-
-          $env:APPMAP_CONFIG_FILE = Join-Path $site "appmap.yml"
-          $env:APPMAP_OUTPUT_DIRECTORY = Join-Path $site "tmp\appmap"
-          $env:APPMAP_DEBUG = "true"
-
-          $exe = "C:\Program Files\IIS Express\iisexpress.exe"
-          if (-not (Test-Path $exe)) { $exe = "C:\Program Files (x86)\IIS Express\iisexpress.exe" }
-          if (-not (Test-Path $exe)) { throw "IIS Express not found on the runner" }
-
-          # Capture the host's output (agent debug + any FileLoadException).
-          $out = Join-Path $site "iisexpress.out.log"
-          $err = Join-Path $site "iisexpress.err.log"
-          $proc = Start-Process $exe -ArgumentList "/path:$site","/port:8088" -PassThru `
-            -RedirectStandardOutput $out -RedirectStandardError $err
-          try {
-            $served = $false
-            for ($i = 0; $i -lt 30; $i++) {
-              try {
-                (Invoke-WebRequest "http://localhost:8088/Default.aspx" -UseBasicParsing).Content | Out-Null
-                $served = $true; break
-              } catch { Start-Sleep -Seconds 1 }
-            }
-            Start-Sleep -Seconds 1   # let the end-request hook flush the map
-          } finally {
-            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-          }
-          Write-Host "--- iisexpress stdout ---"; Get-Content $out -ErrorAction SilentlyContinue
-          Write-Host "--- iisexpress stderr ---"; Get-Content $err -ErrorAction SilentlyContinue
-          Write-Host "--- appmap tree ---"; Get-ChildItem -Recurse (Join-Path $site "tmp") -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
-          if (-not $served) { throw "IIS Express never served the app" }
-
-      - name: Assert the module produced a request AppMap
-        shell: pwsh
-        run: |
-          $dir = Join-Path $env:RUNNER_TEMP "site\tmp\appmap"
-          $maps = Get-ChildItem -Recurse $dir -Filter *.appmap.json -ErrorAction SilentlyContinue
-          if (-not $maps) { throw "no AppMap produced by the System.Web module" }
-          $json = Get-Content $maps[0].FullName -Raw | ConvertFrom-Json
-          $http = $json.events | Where-Object { $_.http_server_request } | Select-Object -First 1
-          if (-not $http) { throw "map has no http_server_request event" }
-          Write-Host "System.Web module recorded $($http.http_server_request.request_method) $($http.http_server_request.path_info)"
+        run: ./scripts/ci/system-web-iis-smoke.ps1
