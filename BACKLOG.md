@@ -69,6 +69,28 @@ From a live zero-touch run against eShopOnWeb on SQL Server 2022. Done:
 **All gap-analysis items R1–R8 are now done and CI-verified.** Next frontier:
 the RCA-findings depth (`@appland/scanner` over planted anti-patterns).
 
+## 1b. Upstream review feedback (first round)
+
+- ✅ **Tests record unmodified** — `TestHooks` patches the xUnit/NUnit
+  execution pipeline when the agent is attached: one AppMap per test with
+  `test_status`, parallel-safe (AsyncLocal sessions). Opt out per test/class
+  with `[AppMap.NoRecord]` (annotations-only package); the `[AppMap]`
+  attributes stand down when hooks are active and remain the no-agent path.
+  Demonstrated on eShopOnWeb: 40 per-test maps, zero test-code changes.
+- ✅ **Runner** — `appmap-dotnet` (`src/AppMap.Runner`, a dotnet tool): runs
+  any command with the agent attached; env-var attach stays documented for
+  pipelines where a wrapper is awkward.
+- ✅ **Examples are zero-touch** — PetClinic no longer calls `UseAppMap()`
+  (annotations-only reference for `[Labels]`); ZeroTouchWeb gained labels;
+  explicit `UseAppMap()` de-emphasized in docs to the advanced path.
+- ✅ **CI test code extracted to `scripts/ci/`** — workflows are thin
+  wrappers; each script runs locally.
+- ✅ **System.Web zero-touch gap called out** in the README (no
+  DOTNET_STARTUP_HOOKS on .NET Framework; web.config / applicationHost.config
+  module registration is the no-code-change path).
+- Open: deliver upstream as an orphan branch with complete history (delivery
+  mechanics, not code).
+
 Original scope notes (for the deeper passes):
 
 - **Read the appmap-java harness first** (`appmap-java`'s `agent/test`,

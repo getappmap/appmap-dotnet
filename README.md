@@ -21,10 +21,11 @@ Javassist.
 | `src/AppMap.Agent` | Config, recorder, event model, serializer, Harmony instrumentation, SQL + built-in hooks | `agent` (config / record / output / transform) |
 | `src/AppMap.Attributes` | `[Labels]` attribute for application code (dependency-free) | annotation artifact (`@Labels`) |
 | `src/AppMap.StartupHook` | `DOTNET_STARTUP_HOOKS` entry point | `premain` |
+| `src/AppMap.Runner` | `appmap-dotnet` tool: runs any command with the agent attached | `-javaagent` wrapper |
 | `src/AppMap.AspNetCore` | HTTP server events, request recording, remote recording endpoints | servlet hooks, `RemoteRecordingManager` |
 | `src/AppMap.SystemWeb` | The same for classic ASP.NET (`IHttpModule`, .NET Framework) | servlet hooks |
-| `src/AppMap.Testing.Xunit` | One AppMap per xUnit test | JUnit hooks |
-| `src/AppMap.Testing.NUnit` | One AppMap per NUnit test (with test_status) | TestNG hooks |
+| `src/AppMap.Testing.Xunit` | Explicit `[AppMap]` per-test recording (tests auto-record when the agent is attached) | JUnit hooks |
+| `src/AppMap.Testing.NUnit` | Explicit `[AppMap]` per-test recording (tests auto-record when the agent is attached) | TestNG hooks |
 | `test/AppMap.Agent.Tests` | Serializer / config / value-capture unit tests | — |
 | `examples/HelloAppMap` | Smallest possible recorded app | — |
 | `examples/PetClinic` | ASP.NET Core + EF Core/SQLite web app (HTTP + SQL) | spring-petclinic |
@@ -32,13 +33,8 @@ Javassist.
 
 ## Quick start
 
-Build everything:
-
-```sh
-dotnet build AppMap.sln
-```
-
-Create `appmap.yml` in your project root, listing the namespaces to record:
+Using AppMap requires **no change to application code**. Create `appmap.yml`
+in your project root, listing the namespaces to record:
 
 ```yaml
 name: my-app
@@ -48,58 +44,71 @@ packages:
   - MyApp.Generated
 ```
 
-### Console / worker process
+then run your app, tests, or any .NET command under the runner:
 
 ```sh
-APPMAP_RECORD_PROCESS=true \
-DOTNET_STARTUP_HOOKS=/path/to/AppMap.StartupHook.dll \
-dotnet run
+dotnet build AppMap.sln
+appmap-dotnet -- dotnet run          # web app: one AppMap per request
+appmap-dotnet -- dotnet test         # tests: one AppMap per test
+APPMAP_RECORD_PROCESS=true appmap-dotnet -- dotnet run   # whole process
 ```
 
-One AppMap covering the whole process is written to
-`tmp/appmap/process_recording/` at exit.
+(`appmap-dotnet` is `src/AppMap.Runner`, a dotnet tool; from this repo run it
+as `dotnet src/AppMap.Runner/bin/Release/net8.0/AppMap.Runner.dll -- …`.)
 
-### ASP.NET Core
-
-```csharp
-app.UseAppMap();   // first in the pipeline
-```
-
-Or attach with **zero source changes** — no package reference, no
-`UseAppMap()` call — by naming the integration assembly as a HostingStartup:
+The runner is a thin convenience: it sets two environment variables and execs
+the command. In pipelines where a wrapper is awkward, set them directly —
+this is the same mechanism, not an alternative one:
 
 ```sh
-DOTNET_STARTUP_HOOKS=/path/to/AppMap.StartupHook.dll \
-ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=AppMap.AspNetCore \
+DOTNET_STARTUP_HOOKS=/path/to/AppMap.StartupHook.dll \        # instrumentation
+ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=AppMap.AspNetCore \       # web middleware
 dotnet YourApp.dll
 ```
 
-`AppMap.AspNetCore` ships an `[assembly: HostingStartup]` that registers an
-`IStartupFilter` prepending `UseAppMap()` for you — the .NET analog of a Java
-`-javaagent` auto-registering its servlet filter. (See
-`harness/fixtures/ZeroTouchWeb` for a real app recorded this way.)
+### ASP.NET Core
 
-Either way this records `http_server_request`/`http_server_response` events,
-writes one AppMap per request to `tmp/appmap/request_recording/` (disable
-with `APPMAP_RECORDING_REQUESTS=false`), and serves the remote-recording
-protocol used by AppMap clients:
+With the agent attached (runner or env vars), `AppMap.AspNetCore`'s
+`[assembly: HostingStartup]` registers an `IStartupFilter` that prepends the
+AppMap middleware automatically — the .NET analog of a Java `-javaagent`
+auto-registering its servlet filter. `examples/PetClinic` and
+`harness/fixtures/ZeroTouchWeb` are both recorded this way, unmodified.
+
+This records `http_server_request`/`http_server_response` events, writes one
+AppMap per request to `tmp/appmap/request_recording/` (disable with
+`APPMAP_RECORDING_REQUESTS=false`), and serves the remote-recording protocol
+used by AppMap clients:
 
 - `GET /_appmap/record` → `{"enabled": <bool>}`
 - `POST /_appmap/record` → start (409 if already recording)
 - `DELETE /_appmap/record` → stop; response body is the AppMap JSON
 - `GET /_appmap/record/checkpoint` → snapshot without stopping
 
+For pipelines that need explicit control over middleware order (custom
+`IStartupFilter` ordering, unusual hosting setups), reference
+`AppMap.AspNetCore` and call `app.UseAppMap()` first in the pipeline
+yourself; the call is idempotent with the automatic injection.
+
 ### Tests
 
-```csharp
-[AppMap]            // AppMap.Testing.Xunit or AppMap.Testing.NUnit
-public class UserServiceTests { ... }
+Tests are recorded **unmodified**: with the agent attached, the xUnit and
+NUnit execution pipelines are hooked directly, producing one AppMap per test
+(with `test_status`) even under parallel execution — sessions are
+async-local, so concurrent tests record coherent, separate maps.
+
+```sh
+appmap-dotnet -- dotnet test
 ```
 
+Opt a test (or class, or assembly) out with `[AppMap.NoRecord]` from the
+dependency-free `AppMap.Attributes` package. The `[AppMap]` attributes in
+`AppMap.Testing.Xunit` / `AppMap.Testing.NUnit` remain for runs *without*
+the agent attached (they stand down automatically when it is).
+
 AppMaps land in `tmp/appmap/xunit/` / `tmp/appmap/nunit/`, named
-`{Class}_{method}.appmap.json`. Disable test parallelization while
-recording, or maps from concurrent tests will interleave (the old
-prototype had the same constraint with XUnit).
+`{Class}_{method}.appmap.json`. When using the `[AppMap]` attribute path
+without the agent, disable test parallelization while recording — that path
+uses a single global session, so maps from concurrent tests would interleave.
 
 ### SQL
 
@@ -112,11 +121,16 @@ events.
 
 `AppMap.Agent` multi-targets `net8.0` and `netstandard2.0`, so it also
 runs on .NET Framework 4.6.2+, .NET Core 2.x+, and Mono.
-`DOTNET_STARTUP_HOOKS` is a .NET Core 3.0+ feature; on .NET Framework
-call `AppMap.AgentBootstrap.Init()` explicitly at startup (e.g. from
-`Application_Start`), or just register the module below, which does it
-for you. For classic ASP.NET, `AppMap.SystemWeb` provides the
-`IHttpModule` equivalent of `UseAppMap()`:
+
+**Known zero-touch gap:** `DOTNET_STARTUP_HOOKS` is a .NET Core 3.0+
+feature, so the runner/env-var attach does not work on .NET Framework —
+there is no equivalent process-wide managed injection point. The
+no-*code*-change options there are configuration-level instead: register
+the module below in `web.config` (or at the IIS site/server level via
+`applicationHost.config`, which touches no application file at all). For
+non-web Framework processes, call `AppMap.AgentBootstrap.Init()` at startup.
+For classic ASP.NET, `AppMap.SystemWeb` provides the `IHttpModule`
+equivalent of `UseAppMap()`:
 
 ```xml
 <system.webServer>
