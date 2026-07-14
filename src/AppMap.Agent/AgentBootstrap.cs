@@ -28,6 +28,7 @@ public static class AgentBootstrap
             new Instrumentor(config).Start();
             SqlHooks.Install();
             BuiltinHooks.Install();
+            TestHooks.Install();
 
             if (Properties.RecordingProcess)
                 StartProcessRecording();

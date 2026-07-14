@@ -23,6 +23,11 @@ public sealed class AppMapAttribute : Attribute, ITestAction
     {
         startedHere = false;
         AgentBootstrap.Init();
+        // When the agent is attached, tests are auto-recorded with no code
+        // changes (TestHooks); this attribute then stands down and remains
+        // the explicit path for runs without the agent.
+        if (Instrumentation.TestHooks.Active)
+            return;
         // Don't displace a remote or process recording already in progress.
         if (Recorder.Instance.HasGlobalSession || test.Method == null)
             return;

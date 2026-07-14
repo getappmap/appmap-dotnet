@@ -32,6 +32,10 @@ public static class Properties
     /// <summary>APPMAP_RECORD_PROCESS: record the whole process, written at exit (default false).</summary>
     public static bool RecordingProcess => Flag("APPMAP_RECORD_PROCESS", false);
 
+    /// <summary>APPMAP_RECORDING_TESTS: record one AppMap per xUnit/NUnit test
+    /// when the agent is attached, with no test-code changes (default true).</summary>
+    public static bool RecordingTests => Flag("APPMAP_RECORDING_TESTS", true);
+
     /// <summary>APPMAP_RECORD_PRIVATE: instrument private methods too (default false).</summary>
     public static bool RecordPrivate => Flag("APPMAP_RECORD_PRIVATE", false);
 

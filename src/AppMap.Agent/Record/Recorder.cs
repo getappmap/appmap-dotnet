@@ -64,6 +64,21 @@ public sealed class Recorder
         return session?.Finish();
     }
 
+    /// <summary>The session bound to the current async flow, if any.</summary>
+    internal RecordingSession? LocalSession => localSession.Value;
+
+    /// <summary>
+    /// Finishes a specific local session. Used by hooks that must finish a
+    /// session from a continuation (an async test completing) where the
+    /// ambient AsyncLocal may or may not still point at it.
+    /// </summary>
+    internal Recording FinishLocal(RecordingSession session)
+    {
+        if (ReferenceEquals(localSession.Value, session))
+            localSession.Value = null;
+        return session.Finish();
+    }
+
     /// <summary>Routes an event to the active session(s), registering its code object.</summary>
     public void Add(Event e, Action<CodeObjectTree>? registerCodeObject = null)
     {
