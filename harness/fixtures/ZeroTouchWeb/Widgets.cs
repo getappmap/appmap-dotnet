@@ -1,3 +1,4 @@
+using AppMap;
 using Microsoft.EntityFrameworkCore;
 
 namespace ZeroTouchWeb;
@@ -26,10 +27,13 @@ public class WidgetService
 
     public WidgetService(WidgetContext db) => this.db = db;
 
+    [Labels("crud", "crud.read")]
     public List<Widget> All() => db.Widgets.OrderBy(w => w.Id).ToList();
 
+    [Labels("crud", "crud.read")]
     public Widget? Find(int id) => db.Widgets.FirstOrDefault(w => w.Id == id);
 
+    [Labels("crud", "crud.create")]
     public Widget Add(Widget widget)
     {
         db.Widgets.Add(widget);

@@ -13,8 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/AppMap.AspNetCore/AppMap.AspNetCore.csproj" />
-    <ProjectReference Include="../../src/AppMap.Agent/AppMap.Agent.csproj" />
+    <!-- The only AppMap reference is the dependency-free annotations package
+         (for [Labels]); the agent itself attaches with no code change:
+           appmap-dotnet dotnet run
+         or DOTNET_STARTUP_HOOKS + ASPNETCORE_HOSTINGSTARTUPASSEMBLIES. -->
+    <ProjectReference Include="../../src/AppMap.Attributes/AppMap.Attributes.csproj" />
   </ItemGroup>
 
 </Project>

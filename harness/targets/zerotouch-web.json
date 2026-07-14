@@ -2,20 +2,43 @@
   "name": "ZeroTouchWeb",
   "mode": "web",
   "local_path": "harness/fixtures/ZeroTouchWeb",
-  "appmap_packages": ["ZeroTouchWeb"],
+  "appmap_packages": [
+    "ZeroTouchWeb"
+  ],
   "build": "dotnet build -c Release",
   "launch": "bin/Release/net8.0/ZeroTouchWeb.dll",
   "ready_path": "/health",
   "requests": [
-    { "method": "GET", "path": "/widgets" },
-    { "method": "GET", "path": "/widgets/2" },
-    { "method": "GET", "path": "/widgets/999" },
-    { "method": "POST", "path": "/widgets", "json": { "name": "Gizmo", "quantity": 5 } }
+    {
+      "method": "GET",
+      "path": "/widgets"
+    },
+    {
+      "method": "GET",
+      "path": "/widgets/2"
+    },
+    {
+      "method": "GET",
+      "path": "/widgets/999"
+    },
+    {
+      "method": "POST",
+      "path": "/widgets",
+      "json": {
+        "name": "Gizmo",
+        "quantity": 5
+      }
+    }
   ],
   "thresholds": {
     "min_maps": 4,
     "min_http_events": 4,
     "min_sql_events": 3,
-    "min_classmap_functions": 3
+    "min_classmap_functions": 3,
+    "expected_labels": [
+      "crud",
+      "crud.read",
+      "crud.create"
+    ]
   }
 }

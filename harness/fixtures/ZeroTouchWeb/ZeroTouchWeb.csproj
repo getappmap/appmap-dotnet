@@ -15,6 +15,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
+    <!-- The one sanctioned AppMap touch: the dependency-free, annotations-only
+         labels package (the analog of appmap-java's annotation jar). The agent
+         matches it by type name; without the agent it is inert metadata. -->
+    <ProjectReference Include="../../../src/AppMap.Attributes/AppMap.Attributes.csproj" />
   </ItemGroup>
 
 </Project>
