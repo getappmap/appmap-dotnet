@@ -88,8 +88,8 @@ the RCA-findings depth (`@appland/scanner` over planted anti-patterns).
 - ✅ **System.Web zero-touch gap called out** in the README (no
   DOTNET_STARTUP_HOOKS on .NET Framework; web.config / applicationHost.config
   module registration is the no-code-change path).
-- Open: deliver upstream as an orphan branch with complete history (delivery
-  mechanics, not code).
+- ✅ **Delivered upstream as an orphan branch with complete history** — see
+  section 1c.
 
 Original scope notes (for the deeper passes):
 
@@ -115,6 +115,37 @@ Original scope notes (for the deeper passes):
 - **Matrix**: Debug/Release, with/without portable PDBs, xUnit + NUnit
   recorders, SQLite + SQL Server providers, startup-hook vs
   `UseAppMap()` attach.
+
+## 1c. Upstream review feedback (second round) — spec + delivery
+
+- ✅ **Delivered as an orphan branch with complete history** —
+  `getappmap/appmap-dotnet` branch `claude/exciting-ritchie-ksbydi` now carries
+  the full authored history at the repo root (no shared ancestor with
+  `master`), replacing the earlier `managed/` subdirectory PR (#34, since
+  closed — an orphan branch has no merge-base with `master`, so GitHub
+  auto-closes such a PR; the review thread lives on).
+- ✅ **Data-format conformance verified against official tooling** — output
+  reproduced from the serializer and accepted by the `@appland/appmap` CLI
+  (v3.201.3 `sequence-diagram`, exit 0) and by `@appland/models`
+  (`buildAppMap().normalize().build()`): classMap resolves, every `call`
+  resolves to a code object, `call`/`return` pair with no dangling frames, the
+  HTTP route normalizes, SQL is recognized. (No .NET SDK was available to build
+  the agent; validated via reproduced output.)
+- **Open — declared format version accuracy**: `AppMapSerializer.FormatVersion`
+  is `"1.2"` while the serializer emits `normalized_path_info` (a later-format
+  field). Tooling accepts it (the model does not gate features on the version
+  string), so this is a labeling nit, not a conformance failure. Confirm the
+  correct version→field mapping against `getappmap/appmap` and bump the string
+  if warranted.
+- **Open — HTTP headers**: `http_server_request` / `http_server_response`
+  `headers` are spec-recommended but not currently emitted. Future work.
+- **Open — separate repository (delivery; maintainer's call)**: dividedmind
+  offered "orphan branch *or* a separate repository." A dedicated repo is the
+  cleaner review/adoption surface (normal diffs + inline review). Candidate
+  names: `getappmap/appmap-dotnet-managed`, or promote the managed agent to
+  `appmap-dotnet` with the C++ prototype moved to a tag/branch or
+  `appmap-dotnet-native`. Needs a getappmap org admin to create; then push the
+  full history there.
 
 ## 2. Older .NET support — DONE (validation on Windows outstanding)
 
